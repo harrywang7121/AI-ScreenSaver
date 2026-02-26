@@ -1,17 +1,21 @@
-//
-//  AI_ScreenSaverApp.swift
-//  AI_ScreenSaver
-//
-//  Created by ByteDance on 2026/2/24.
-//
-
 import SwiftUI
 
 @main
 struct AI_ScreenSaverApp: App {
+    @StateObject private var store = SessionStore()
+
     var body: some Scene {
-        WindowGroup {
+        WindowGroup("LunchTalk Saver", id: "main") {
             ContentView()
+                .environmentObject(store)
         }
+        .defaultSize(width: 1280, height: 760)
+
+        WindowGroup("Session Summary", id: "summary") {
+            SummaryWindowView()
+                .environmentObject(store)
+        }
+        .defaultSize(width: 520, height: 620)
+        .windowResizability(.contentSize)
     }
 }
