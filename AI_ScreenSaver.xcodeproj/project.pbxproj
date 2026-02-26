@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		2BF251712F4D5915001EDDC5 /* DEVLOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 2BF251702F4D5915001EDDC5 /* DEVLOG.md */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		2BF251482F4D5594001EDDC5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,11 +31,32 @@
 		2BF2513A2F4D5593001EDDC5 /* AI_ScreenSaver.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AI_ScreenSaver.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2BF251472F4D5594001EDDC5 /* AI_ScreenSaverTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AI_ScreenSaverTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2BF251512F4D5594001EDDC5 /* AI_ScreenSaverUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AI_ScreenSaverUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2BF251702F4D5915001EDDC5 /* DEVLOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DEVLOG.md; sourceTree = "<group>"; };
+		2BF251792F4D6A4E001EDDC5 /* LunchTalkSaver.saver */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LunchTalkSaver.saver; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		2BF251832F4D6C5B001EDDC5 /* Exceptions for "AI_ScreenSaver" folder in "LunchTalkSaver" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				ContentView.swift,
+				HistoryView.swift,
+				HotCornerMonitor.swift,
+				SaverExitMonitor.swift,
+				SaverWindowView.swift,
+				ScreenSaverPlugin.swift,
+				SessionStore.swift,
+			);
+			target = 2BF251782F4D6A4E001EDDC5 /* LunchTalkSaver */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		2BF2513C2F4D5593001EDDC5 /* AI_ScreenSaver */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				2BF251832F4D6C5B001EDDC5 /* Exceptions for "AI_ScreenSaver" folder in "LunchTalkSaver" target */,
+			);
 			path = AI_ScreenSaver;
 			sourceTree = "<group>";
 		};
@@ -43,6 +68,11 @@
 		2BF251542F4D5594001EDDC5 /* AI_ScreenSaverUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = AI_ScreenSaverUITests;
+			sourceTree = "<group>";
+		};
+		2BF2517A2F4D6A4E001EDDC5 /* LunchTalkSaver */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = LunchTalkSaver;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -69,6 +99,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		2BF251762F4D6A4E001EDDC5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -78,7 +115,9 @@
 				2BF2513C2F4D5593001EDDC5 /* AI_ScreenSaver */,
 				2BF2514A2F4D5594001EDDC5 /* AI_ScreenSaverTests */,
 				2BF251542F4D5594001EDDC5 /* AI_ScreenSaverUITests */,
+				2BF2517A2F4D6A4E001EDDC5 /* LunchTalkSaver */,
 				2BF2513B2F4D5593001EDDC5 /* Products */,
+				2BF251702F4D5915001EDDC5 /* DEVLOG.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -88,11 +127,22 @@
 				2BF2513A2F4D5593001EDDC5 /* AI_ScreenSaver.app */,
 				2BF251472F4D5594001EDDC5 /* AI_ScreenSaverTests.xctest */,
 				2BF251512F4D5594001EDDC5 /* AI_ScreenSaverUITests.xctest */,
+				2BF251792F4D6A4E001EDDC5 /* LunchTalkSaver.saver */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		2BF251742F4D6A4E001EDDC5 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
 		2BF251392F4D5593001EDDC5 /* AI_ScreenSaver */ = {
@@ -163,6 +213,29 @@
 			productReference = 2BF251512F4D5594001EDDC5 /* AI_ScreenSaverUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		2BF251782F4D6A4E001EDDC5 /* LunchTalkSaver */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2BF2517F2F4D6A4E001EDDC5 /* Build configuration list for PBXNativeTarget "LunchTalkSaver" */;
+			buildPhases = (
+				2BF251742F4D6A4E001EDDC5 /* Headers */,
+				2BF251752F4D6A4E001EDDC5 /* Sources */,
+				2BF251762F4D6A4E001EDDC5 /* Frameworks */,
+				2BF251772F4D6A4E001EDDC5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				2BF2517A2F4D6A4E001EDDC5 /* LunchTalkSaver */,
+			);
+			name = LunchTalkSaver;
+			packageProductDependencies = (
+			);
+			productName = LunchTalkSaver;
+			productReference = 2BF251792F4D6A4E001EDDC5 /* LunchTalkSaver.saver */;
+			productType = "com.apple.product-type.bundle";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -184,6 +257,9 @@
 						CreatedOnToolsVersion = 26.3;
 						TestTargetID = 2BF251392F4D5593001EDDC5;
 					};
+					2BF251782F4D6A4E001EDDC5 = {
+						CreatedOnToolsVersion = 26.3;
+					};
 				};
 			};
 			buildConfigurationList = 2BF251352F4D5593001EDDC5 /* Build configuration list for PBXProject "AI_ScreenSaver" */;
@@ -203,6 +279,7 @@
 				2BF251392F4D5593001EDDC5 /* AI_ScreenSaver */,
 				2BF251462F4D5594001EDDC5 /* AI_ScreenSaverTests */,
 				2BF251502F4D5594001EDDC5 /* AI_ScreenSaverUITests */,
+				2BF251782F4D6A4E001EDDC5 /* LunchTalkSaver */,
 			);
 		};
 /* End PBXProject section */
@@ -212,6 +289,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2BF251712F4D5915001EDDC5 /* DEVLOG.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -223,6 +301,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		2BF2514F2F4D5594001EDDC5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2BF251772F4D6A4E001EDDC5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -247,6 +332,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		2BF2514D2F4D5594001EDDC5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2BF251752F4D6A4E001EDDC5 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -533,6 +625,48 @@
 			};
 			name = Release;
 		};
+		2BF251802F4D6A4E001EDDC5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 589FBD64P3;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPrincipalClass = LunchTalkSaverView;
+				INSTALL_PATH = "$(HOME)/Library/Screen Savers";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = haoyu.LunchTalkSaver;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				WRAPPER_EXTENSION = saver;
+			};
+			name = Debug;
+		};
+		2BF251812F4D6A4E001EDDC5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 589FBD64P3;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPrincipalClass = LunchTalkSaverView;
+				INSTALL_PATH = "$(HOME)/Library/Screen Savers";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = haoyu.LunchTalkSaver;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				WRAPPER_EXTENSION = saver;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -568,6 +702,15 @@
 			buildConfigurations = (
 				2BF251622F4D5594001EDDC5 /* Debug */,
 				2BF251632F4D5594001EDDC5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2BF2517F2F4D6A4E001EDDC5 /* Build configuration list for PBXNativeTarget "LunchTalkSaver" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2BF251802F4D6A4E001EDDC5 /* Debug */,
+				2BF251812F4D6A4E001EDDC5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

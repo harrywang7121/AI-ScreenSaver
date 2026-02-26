@@ -33,8 +33,7 @@ final class LunchTalkScreenSaverView: ScreenSaverView {
     }
 
     private func setupHostingView(frame: NSRect) {
-        let rootView = ContentView(mode: .saver)
-            .environmentObject(store)
+        let rootView = SaverContentView(store: store)
         let hostingView = NSHostingView(rootView: AnyView(rootView))
         hostingView.frame = frame
         hostingView.autoresizingMask = [.width, .height]
