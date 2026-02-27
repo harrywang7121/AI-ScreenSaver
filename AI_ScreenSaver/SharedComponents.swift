@@ -201,37 +201,71 @@ struct FutureSummarySection: View {
     let icon: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(accentColor)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 7) {
+                ZStack {
+                    Circle()
+                        .fill(accentColor.opacity(0.2))
+                        .frame(width: 24, height: 24)
+                        .shadow(color: accentColor.opacity(0.5), radius: 4)
+
+                    Image(systemName: icon)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(accentColor)
+                }
+
                 Text(title)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
                     .foregroundStyle(accentColor)
             }
 
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 6) {
                 ForEach(items, id: \.self) { item in
-                    HStack(alignment: .top, spacing: 8) {
+                    HStack(alignment: .top, spacing: 10) {
                         RoundedRectangle(cornerRadius: 2)
-                            .fill(accentColor.opacity(0.7))
-                            .frame(width: 2, height: 12)
-                            .padding(.top, 2)
+                            .fill(
+                                LinearGradient(
+                                    colors: [accentColor, accentColor.opacity(0.5)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .frame(width: 3, height: 14)
+                            .shadow(color: accentColor.opacity(0.6), radius: 2)
+                            .padding(.top, 3)
+
                         Text(item)
                             .font(.system(size: 12, weight: .regular))
-                            .foregroundStyle(.white.opacity(0.82))
+                            .foregroundStyle(.white.opacity(0.85))
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
         }
-        .padding(12)
-        .background(accentColor.opacity(0.07))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(accentColor.opacity(0.2), lineWidth: 1)
-        )
+        .padding(14)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(accentColor.opacity(0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(accentColor.opacity(0.3), lineWidth: 1)
+                        .shadow(color: accentColor.opacity(0.3), radius: 6)
+                )
+        }
+    }
+}
+
+// MARK: - AuroraBlob (Aurora Blob Component for animated backgrounds)
+struct AuroraBlob: View {
+    let color: Color
+    let size: CGSize
+    let offset: CGSize
+
+    var body: some View {
+        Ellipse()
+            .fill(color)
+            .frame(width: size.width, height: size.height)
+            .blur(radius: 100)
+            .offset(offset)
     }
 }
