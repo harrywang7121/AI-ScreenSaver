@@ -2,6 +2,10 @@ import AppKit
 import ScreenSaver
 import SwiftUI
 
+/// Notification name used to signal the companion app that a saver session ended.
+/// Payload is a JSON string encoded as the notification's `object`.
+let kSaverSessionEndedNotification = "haoyu.LunchTalkSaver.sessionEnded"
+
 final class LunchTalkScreenSaverView: ScreenSaverView {
     private var hostingView: NSHostingView<AnyView>?
     private var store = SessionStore()
@@ -25,6 +29,7 @@ final class LunchTalkScreenSaverView: ScreenSaverView {
 
     override func stopAnimation() {
         store.endSession()
+        broadcastSessionSummary()
         super.stopAnimation()
     }
 
@@ -39,5 +44,30 @@ final class LunchTalkScreenSaverView: ScreenSaverView {
         hostingView.autoresizingMask = [.width, .height]
         addSubview(hostingView)
         self.hostingView = hostingView
+    }
+
+    /// Encode the current session summary as JSON and broadcast via
+    /// DistributedNotificationCenter so the companion app can pick it up
+    /// and show the summary popup — even though they run in separate processes.
+    private func broadcastSessionSummary() {
+        let s = store.summary
+        let payload: [String: Any] = [
+            "title":        s.title,
+            "overview":     s.overview,
+            "bullets":      s.bullets,
+            "inspirations": s.inspirations,
+            "highlights":   s.highlights
+        ]
+        guard
+            let data = try? JSONSerialization.data(withJSONObject: payload),
+            let jsonString = String(data: data, encoding: .utf8)
+        else { return }
+
+        DistributedNotificationCenter.default().postNotificationName(
+            NSNotification.Name(kSaverSessionEndedNotification),
+            object: jsonString,
+            userInfo: nil,
+            deliverImmediately: true
+        )
     }
 }

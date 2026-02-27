@@ -8,6 +8,7 @@ enum ContentMode {
 
 struct ContentView: View {
     @EnvironmentObject private var store: SessionStore
+    @EnvironmentObject private var bridge: SaverNotificationBridge
     @Environment(\.openWindow) private var openWindow
 
     @State private var showSettings = false
@@ -55,6 +56,21 @@ struct ContentView: View {
         .onAppear {
             if !isSaverMode && !store.isRunning {
                 store.startSession()
+            }
+        }
+        // React to .saver bundle finishing: update summary and open popup.
+        // Use eventCount (Int, Equatable) as trigger; read actual payload from bridge.
+        .onChange(of: bridge.eventCount) { _, _ in
+            guard !isSaverMode, let payload = bridge.latestPayload else { return }
+            store.summary = SessionSummary(
+                title:        payload["title"]        as? String   ?? store.sessionTitle,
+                overview:     payload["overview"]     as? String   ?? "",
+                bullets:      payload["bullets"]      as? [String] ?? [],
+                inspirations: payload["inspirations"] as? [String] ?? [],
+                highlights:   payload["highlights"]   as? [String] ?? []
+            )
+            if store.showPopupOnExit {
+                openWindow(id: "summary")
             }
         }
         .overlay {
@@ -1052,5 +1068,6 @@ struct SummaryWindowView: View {
 #Preview {
     ContentView(mode: .main)
         .environmentObject(SessionStore())
+        .environmentObject(SaverNotificationBridge())
         .frame(width: 1280, height: 720)
 }
