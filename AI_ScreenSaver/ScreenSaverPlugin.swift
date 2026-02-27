@@ -6,10 +6,25 @@ import Foundation
 private enum SaverIPC {
     static let distributedName = "haoyu.LunchTalkSaver.sessionEnded"
 
-    static var summaryFileURL: URL {
-        let folder = URL(fileURLWithPath: "/tmp/LunchTalkSaverIPC", isDirectory: true)
-        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        return folder.appendingPathComponent("last_summary.json")
+    static var ipcFolders: [URL] {
+        [
+            URL(fileURLWithPath: "/tmp/LunchTalkSaverIPC", isDirectory: true),
+            URL(fileURLWithPath: "/Users/Shared/LunchTalkSaverIPC", isDirectory: true)
+        ]
+    }
+
+    static var summaryFileURLs: [URL] {
+        ipcFolders.map { folder in
+            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            return folder.appendingPathComponent("last_summary.json")
+        }
+    }
+
+    static var heartbeatURLs: [URL] {
+        ipcFolders.map { folder in
+            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            return folder.appendingPathComponent("heartbeat.txt")
+        }
     }
 }
 
@@ -31,11 +46,13 @@ final class LunchTalkScreenSaverView: ScreenSaverView {
 
     override func startAnimation() {
         super.startAnimation()
+        writeHeartbeat("startAnimation at \(Date())")
         store.restartSession()
     }
 
     override func stopAnimation() {
         store.endSession()
+        writeHeartbeat("stopAnimation at \(Date())")
         publishSessionSummary()
         super.stopAnimation()
     }
@@ -53,6 +70,21 @@ final class LunchTalkScreenSaverView: ScreenSaverView {
         self.hostingView = hostingView
     }
 
+    private func writeHeartbeat(_ text: String) {
+        let line = "\(text)\n"
+        guard let data = line.data(using: .utf8) else { return }
+        for url in SaverIPC.heartbeatURLs {
+            if FileManager.default.fileExists(atPath: url.path),
+               let handle = try? FileHandle(forWritingTo: url) {
+                try? handle.seekToEnd()
+                try? handle.write(contentsOf: data)
+                try? handle.close()
+            } else {
+                try? data.write(to: url, options: [.atomic])
+            }
+        }
+    }
+
     private func publishSessionSummary() {
         let s = store.summary
         let payload: [String: Any] = [
@@ -67,8 +99,10 @@ final class LunchTalkScreenSaverView: ScreenSaverView {
 
         guard let data = try? JSONSerialization.data(withJSONObject: payload) else { return }
 
-        // Reliable IPC: write to shared file.
-        try? data.write(to: SaverIPC.summaryFileURL, options: [.atomic])
+        // Reliable IPC: write to shared files (multiple locations for robustness).
+        for url in SaverIPC.summaryFileURLs {
+            try? data.write(to: url, options: [.atomic])
+        }
 
         // Fast path: also broadcast (may be missed occasionally; file is fallback).
         if let jsonString = String(data: data, encoding: .utf8) {

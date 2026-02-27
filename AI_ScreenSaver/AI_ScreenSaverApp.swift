@@ -50,18 +50,13 @@ private enum SaverIPC {
     static let distributedName = "haoyu.LunchTalkSaver.sessionEnded"
     static let consumedIDKey = "lastConsumedSaverSummaryID"
 
-    // Use /tmp for cross-process reliability between ScreenSaverEngine and app.
-    static var summaryFileURL: URL {
-        let folder = URL(fileURLWithPath: "/tmp/LunchTalkSaverIPC", isDirectory: true)
-        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        return folder.appendingPathComponent("last_summary.json")
-    }
-
-    // Legacy path (older builds wrote here). Keep for backward compatibility.
-    static var legacySummaryFileURL: URL {
+    static var summaryFileURLs: [URL] {
+        let tmp = URL(fileURLWithPath: "/tmp/LunchTalkSaverIPC/last_summary.json")
+        let shared = URL(fileURLWithPath: "/Users/Shared/LunchTalkSaverIPC/last_summary.json")
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support", isDirectory: true)
-        return base.appendingPathComponent("LunchTalkSaverIPC/last_summary.json")
+        let legacy = base.appendingPathComponent("LunchTalkSaverIPC/last_summary.json")
+        return [tmp, shared, legacy]
     }
 }
 
@@ -105,8 +100,7 @@ final class SaverNotificationBridge: ObservableObject {
     }
 
     private func pollSummaryFile() {
-        let urls = [SaverIPC.summaryFileURL, SaverIPC.legacySummaryFileURL]
-        for url in urls {
+        for url in SaverIPC.summaryFileURLs {
             guard let data = try? Data(contentsOf: url),
                   let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
             else { continue }
