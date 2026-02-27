@@ -1,10 +1,19 @@
 import AppKit
 import ScreenSaver
 import SwiftUI
+import Foundation
 
-/// Notification name used to signal the companion app that a saver session ended.
-/// Payload is a JSON string encoded as the notification's `object`.
-let kSaverSessionEndedNotification = "haoyu.LunchTalkSaver.sessionEnded"
+private enum SaverIPC {
+    static let distributedName = "haoyu.LunchTalkSaver.sessionEnded"
+
+    static var summaryFileURL: URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support", isDirectory: true)
+        let folder = base.appendingPathComponent("LunchTalkSaverIPC", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        return folder.appendingPathComponent("last_summary.json")
+    }
+}
 
 final class LunchTalkScreenSaverView: ScreenSaverView {
     private var hostingView: NSHostingView<AnyView>?
@@ -29,7 +38,7 @@ final class LunchTalkScreenSaverView: ScreenSaverView {
 
     override func stopAnimation() {
         store.endSession()
-        broadcastSessionSummary()
+        publishSessionSummary()
         super.stopAnimation()
     }
 
@@ -46,28 +55,31 @@ final class LunchTalkScreenSaverView: ScreenSaverView {
         self.hostingView = hostingView
     }
 
-    /// Encode the current session summary as JSON and broadcast via
-    /// DistributedNotificationCenter so the companion app can pick it up
-    /// and show the summary popup — even though they run in separate processes.
-    private func broadcastSessionSummary() {
+    private func publishSessionSummary() {
         let s = store.summary
         let payload: [String: Any] = [
-            "title":        s.title,
-            "overview":     s.overview,
-            "bullets":      s.bullets,
+            "id": UUID().uuidString,
+            "timestamp": Date().timeIntervalSince1970,
+            "title": s.title,
+            "overview": s.overview,
+            "bullets": s.bullets,
             "inspirations": s.inspirations,
-            "highlights":   s.highlights
+            "highlights": s.highlights
         ]
-        guard
-            let data = try? JSONSerialization.data(withJSONObject: payload),
-            let jsonString = String(data: data, encoding: .utf8)
-        else { return }
 
-        DistributedNotificationCenter.default().postNotificationName(
-            NSNotification.Name(kSaverSessionEndedNotification),
-            object: jsonString,
-            userInfo: nil,
-            deliverImmediately: true
-        )
+        guard let data = try? JSONSerialization.data(withJSONObject: payload) else { return }
+
+        // Reliable IPC: write to shared file.
+        try? data.write(to: SaverIPC.summaryFileURL, options: [.atomic])
+
+        // Fast path: also broadcast (may be missed occasionally; file is fallback).
+        if let jsonString = String(data: data, encoding: .utf8) {
+            DistributedNotificationCenter.default().postNotificationName(
+                NSNotification.Name(SaverIPC.distributedName),
+                object: jsonString,
+                userInfo: nil,
+                deliverImmediately: true
+            )
+        }
     }
 }
