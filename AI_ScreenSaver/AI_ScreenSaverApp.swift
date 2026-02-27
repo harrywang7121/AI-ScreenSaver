@@ -3,8 +3,16 @@ import AppKit
 import Combine
 import Foundation
 
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        // Keep companion app alive in background so it can receive saver IPC and show summary.
+        false
+    }
+}
+
 @main
 struct AI_ScreenSaverApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var store = SessionStore()
     @StateObject private var bridge = SaverNotificationBridge()
 
