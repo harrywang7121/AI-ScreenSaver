@@ -10,9 +10,10 @@ FRAMEWORKS_DIR="$SDK_PATH/System/Library/Frameworks"
 
 # Source files (screen saver specific)
 SOURCES=(
-    "$PROJECT_DIR/AI_ScreenSaver/ScreenSaverPlugin.swift"
+    "$PROJECT_DIR/AI_ScreenSaver/SharedComponents.swift"
     "$PROJECT_DIR/AI_ScreenSaver/SessionStore.swift"
     "$PROJECT_DIR/AI_ScreenSaver/SaverContentView.swift"
+    "$PROJECT_DIR/AI_ScreenSaver/ScreenSaverPlugin.swift"
 )
 
 echo "🔨 Building LunchTalkSaver.saver..."
