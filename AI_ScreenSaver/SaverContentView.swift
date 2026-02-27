@@ -1,112 +1,52 @@
 import SwiftUI
 
-// SaverThinkingDotsView - animated dots for "思考中…" in screen saver
-private struct SaverThinkingDotsView: View {
-    @State private var animating = false
-
-    var body: some View {
-        HStack(spacing: 5) {
-            ForEach(0..<3, id: \.self) { index in
-                Circle()
-                    .fill(Color.white.opacity(0.8))
-                    .frame(width: 7, height: 7)
-                    .scaleEffect(animating ? 1.0 : 0.5)
-                    .opacity(animating ? 1.0 : 0.4)
-                    .animation(
-                        .easeInOut(duration: 0.5)
-                            .repeatForever(autoreverses: true)
-                            .delay(Double(index) * 0.18),
-                        value: animating
-                    )
-            }
-        }
-        .onAppear { animating = true }
-    }
-}
-
 /// Simplified view for Screen Saver bundle - no App-only dependencies
 struct SaverContentView: View {
     @ObservedObject var store: SessionStore
 
     var body: some View {
         ZStack {
-            // Background gradient
-            LinearGradient(
-                colors: [
-                    Color(red: 0.06, green: 0.08, blue: 0.15),
-                    Color(red: 0.10, green: 0.13, blue: 0.22),
-                    Color(red: 0.15, green: 0.10, blue: 0.18)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-            .overlay(
-                RoundedRectangle(cornerRadius: 60)
-                    .fill(Color.white.opacity(0.04))
-                    .frame(width: 520, height: 520)
-                    .offset(x: -240, y: -200)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 80)
-                    .fill(Color.white.opacity(0.03))
-                    .frame(width: 680, height: 420)
-                    .offset(x: 260, y: 240)
-            )
+            // Aurora background
+            BackgroundView()
 
             VStack(spacing: 20) {
                 // Header
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("LunchTalk Saver")
-                            .font(.custom("Avenir Next", size: 26))
-                            .foregroundStyle(.white)
-                        Text(store.sessionTitle)
-                            .font(.custom("Avenir Next", size: 14))
-                            .foregroundStyle(.white.opacity(0.8))
-                    }
-
-                    Spacer()
-
-                    // Running badge
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(store.isRunning ? Color.green : Color.gray)
-                            .frame(width: 10, height: 10)
-                        Text(store.isRunning ? "对话中" : "已停止")
-                            .font(.custom("Avenir Next", size: 14))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.15))
-                    .clipShape(Capsule())
-                    .foregroundStyle(.white)
-                }
+                SaverHeaderView(store: store)
 
                 // Chat and summary
                 HStack(alignment: .top, spacing: 18) {
                     // Chat list
                     ScrollViewReader { proxy in
                         ScrollView {
-                            LazyVStack(spacing: 18) {
+                            LazyVStack(spacing: 16) {
                                 ForEach(store.messages) { message in
                                     SaverBubbleView(message: message, store: store)
                                         .id(message.id)
                                 }
                             }
-                            .padding(.horizontal, 6)
-                            .padding(.bottom, 6)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 12)
                         }
                         .onChange(of: store.messages.count) { _, _ in
                             guard let lastId = store.messages.last?.id else { return }
-                            withAnimation(.easeOut(duration: 0.4)) {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                                 proxy.scrollTo(lastId, anchor: .bottom)
                             }
                         }
                     }
-                    .padding(18)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .background {
+                        if #available(macOS 26, *) {
+                            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                .glassEffect(.regular)
+                        } else {
+                            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                                )
+                        }
+                    }
 
                     // Summary panel
                     if store.showSummaryInSaver {
@@ -120,176 +60,235 @@ struct SaverContentView: View {
     }
 }
 
+// Background is defined in SharedComponents.swift
+
+// MARK: - Header
+
+private struct SaverHeaderView: View {
+    @ObservedObject var store: SessionStore
+
+    var body: some View {
+        HStack(alignment: .top) {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.2))
+                        .frame(width: 36, height: 36)
+                        .overlay(Circle().stroke(Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.5), lineWidth: 1))
+                        .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.4), radius: 10)
+                    Image(systemName: "brain.head.profile")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(.white)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("LunchTalk Saver")
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                    Text(store.sessionTitle)
+                        .font(.system(size: 10, weight: .regular, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+            }
+
+            Spacer()
+
+            SaverRunningBadge(isRunning: store.isRunning)
+        }
+    }
+}
+
+private struct SaverRunningBadge: View {
+    let isRunning: Bool
+    @State private var pulse = false
+
+    var body: some View {
+        HStack(spacing: 7) {
+            ZStack {
+                if isRunning {
+                    Circle()
+                        .fill(Color.green.opacity(0.3))
+                        .frame(width: 16, height: 16)
+                        .scaleEffect(pulse ? 1.5 : 1.0)
+                        .opacity(pulse ? 0 : 0.6)
+                        .animation(.easeOut(duration: 1.2).repeatForever(autoreverses: false), value: pulse)
+                }
+                Circle()
+                    .fill(isRunning ? Color.green : Color.gray.opacity(0.5))
+                    .frame(width: 8, height: 8)
+                    .shadow(color: isRunning ? .green.opacity(0.8) : .clear, radius: 4)
+            }
+            Text(isRunning ? "对话中" : "已停止")
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.9))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(.white.opacity(0.08))
+        .clipShape(Capsule())
+        .overlay(Capsule().stroke(Color.white.opacity(0.1), lineWidth: 1))
+        .onAppear { pulse = isRunning }
+        .onChange(of: isRunning) { _, v in pulse = v }
+    }
+}
+
+// MARK: - Bubble
+
 struct SaverBubbleView: View {
     let message: Message
     @ObservedObject var store: SessionStore
     @State private var appeared = false
 
+    private var isExplorer: Bool { message.role == .explorer }
+    private var accentColor: Color { isExplorer ? Color(red: 0.29, green: 0.48, blue: 0.96) : Color(red: 0.00, green: 0.79, blue: 0.63) }
+
     var body: some View {
-        HStack(alignment: .bottom, spacing: 8) {
-            if message.role == .explorer {
+        HStack(alignment: .bottom, spacing: 10) {
+            if isExplorer {
                 avatarView
-                bubbleContent
-                Spacer(minLength: 40)
+                bubbleCard
+                Spacer(minLength: 60)
             } else {
-                Spacer(minLength: 40)
-                bubbleContent
+                Spacer(minLength: 60)
+                bubbleCard
                 avatarView
             }
         }
-    }
-
-    private var avatarView: some View {
-        let initial = (message.role == .explorer ? store.roleAName : store.roleBName).prefix(1).uppercased()
-        return ZStack {
-            Circle()
-                .fill(message.role.bubbleColor)
-                .frame(width: 36, height: 36)
-            Text(initial)
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(.white)
-        }
-    }
-
-    @ViewBuilder
-    private var messageContent: some View {
-        if message.text == "思考中…" {
-            SaverThinkingDotsView()
-        } else {
-            Text(message.text)
-                .font(.custom("Avenir Next", size: 15))
-                .foregroundStyle(.white)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var bubbleContent: some View {
-        VStack(alignment: message.role == .explorer ? .leading : .trailing, spacing: 6) {
-            HStack(spacing: 8) {
-                Text(nameForRole)
-                    .font(.custom("Avenir Next", size: 12))
-                    .foregroundStyle(.white.opacity(0.75))
-
-                Text(message.role.badgeText)
-                    .font(.custom("Avenir Next", size: 11))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(message.role.backgroundTint.opacity(0.6))
-                    .clipShape(Capsule())
-            }
-
-            messageContent
-
-            Text(Self.timeFormatter.string(from: message.time))
-                .font(.custom("Avenir Next", size: 11))
-                .foregroundStyle(.white.opacity(0.6))
-        }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 14)
-        .background(message.role.bubbleColor.opacity(0.85))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .frame(maxWidth: 420, alignment: message.role == .explorer ? .leading : .trailing)
         .opacity(appeared ? 1 : 0)
-        .offset(y: appeared ? 0 : 12)
+        .offset(y: appeared ? 0 : 16)
         .onAppear {
-            withAnimation(.easeOut(duration: 0.35)) {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                 appeared = true
             }
         }
     }
 
-    private var nameForRole: String {
-        switch message.role {
-        case .explorer:
-            return store.roleAName
-        case .builder:
-            return store.roleBName
+    private var avatarView: some View {
+        let name = isExplorer ? store.roleAName : store.roleBName
+        let initial = String(name.prefix(1)).uppercased()
+        return ZStack {
+            Circle()
+                .fill(accentColor.opacity(0.2))
+                .frame(width: 38, height: 38)
+                .overlay(
+                    Circle()
+                        .stroke(accentColor.opacity(0.6), lineWidth: 1.5)
+                )
+                .shadow(color: accentColor.opacity(0.5), radius: 8)
+            Text(initial)
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white)
         }
     }
 
-    private static let timeFormatter: DateFormatter = {
+    private var bubbleCard: some View {
+        VStack(alignment: isExplorer ? .leading : .trailing, spacing: 8) {
+            // Role & badge
+            HStack(spacing: 6) {
+                Text(isExplorer ? store.roleAName : store.roleBName)
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(accentColor)
+                Text(message.role.badgeText)
+                    .font(.system(size: 10, weight: .medium))
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 2)
+                    .background(accentColor.opacity(0.2))
+                    .clipShape(Capsule())
+                    .foregroundStyle(accentColor)
+            }
+
+            // Message content
+            messageContentView
+
+            // Time
+            Text(timeText)
+                .font(.system(size: 10, weight: .regular, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.4))
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .background {
+            if #available(macOS 26, *) {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(.clear)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            } else {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .stroke(accentColor.opacity(0.3), lineWidth: 1)
+                    )
+            }
+        }
+        .shadow(color: accentColor.opacity(0.2), radius: 12, x: 0, y: 4)
+        .frame(maxWidth: 440, alignment: isExplorer ? .leading : .trailing)
+    }
+
+    @ViewBuilder
+    private var messageContentView: some View {
+        if message.text == "思考中…" {
+            ThinkingDotsView(color: accentColor)
+        } else {
+            Text(message.text)
+                .font(.system(size: 14, weight: .regular, design: .default))
+                .foregroundStyle(.white.opacity(0.92))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var timeText: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
-        return formatter
-    }()
+        return formatter.string(from: message.time)
+    }
 }
+
+// MARK: - Summary Panel
 
 struct SaverSummaryPanel: View {
     let summary: SessionSummary
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("实时摘要")
-                .font(.custom("Avenir Next", size: 18))
-                .foregroundStyle(.white)
+        VStack(alignment: .leading, spacing: 14) {
+            // Title
+            HStack(spacing: 8) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.yellow.opacity(0.9))
+                Text("实时摘要")
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+            }
 
             if !summary.overview.isEmpty {
                 Text(summary.overview)
-                    .font(.custom("Avenir Next", size: 13))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .lineSpacing(3)
             }
 
-            SaverSummarySection(
-                title: "要点",
-                items: summary.bullets,
-                accentColor: Color(red: 0.24, green: 0.44, blue: 0.92)
-            )
-            SaverSummarySection(
-                title: "灵感点",
-                items: summary.inspirations,
-                accentColor: Color(red: 0.95, green: 0.60, blue: 0.20)
-            )
+            FutureSummarySection(title: "要点", items: summary.bullets, accentColor: Color(red: 0.29, green: 0.48, blue: 0.96), icon: "doc.text")
+            FutureSummarySection(title: "灵感点", items: summary.inspirations, accentColor: Color(red: 1.0, green: 0.65, blue: 0.1), icon: "lightbulb")
 
             if !summary.highlights.isEmpty {
-                SaverSummarySection(
-                    title: "高亮金句",
-                    items: summary.highlights,
-                    accentColor: Color(red: 0.72, green: 0.40, blue: 0.85)
-                )
+                FutureSummarySection(title: "高亮金句", items: summary.highlights, accentColor: Color(red: 0.72, green: 0.35, blue: 0.95), icon: "quote.bubble")
             }
 
             Spacer()
         }
         .padding(18)
-        .background(Color.white.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-    }
-}
-
-struct SaverSummarySection: View {
-    let title: String
-    let items: [String]
-    let accentColor: Color
-
-    init(title: String, items: [String], accentColor: Color = .white.opacity(0.6)) {
-        self.title = title
-        self.items = items
-        self.accentColor = accentColor
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Rectangle()
-                    .fill(accentColor)
-                    .frame(width: 3, height: 14)
-                    .cornerRadius(2)
-                Text(title)
-                    .font(.custom("Avenir Next", size: 13))
-                    .foregroundStyle(.white.opacity(0.75))
-            }
-
-            ForEach(items, id: \.self) { item in
-                HStack(alignment: .top, spacing: 6) {
-                    Circle()
-                        .fill(Color.white.opacity(0.6))
-                        .frame(width: 4, height: 4)
-                        .padding(.top, 6)
-                    Text(item)
-                        .font(.custom("Avenir Next", size: 13))
-                        .foregroundStyle(.white)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+        .background {
+            if #available(macOS 26, *) {
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .glassEffect(.regular)
+            } else {
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    )
             }
         }
     }
