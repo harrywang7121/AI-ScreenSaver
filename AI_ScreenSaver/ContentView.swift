@@ -77,8 +77,6 @@ struct ContentView: View {
     }
 }
 
-// Background is defined in SharedComponents.swift
-
 // MARK: - Header
 
 private struct HeaderView: View {
@@ -88,41 +86,89 @@ private struct HeaderView: View {
 
     var body: some View {
         HStack(alignment: .center) {
-            // Logo + title
-            HStack(spacing: 10) {
+            // Logo + title with futuristic glow
+            HStack(spacing: 12) {
                 ZStack {
+                    // Outer glow
                     Circle()
-                        .fill(Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.2))
-                        .frame(width: 40, height: 40)
-                        .overlay(Circle().stroke(Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.5), lineWidth: 1))
-                        .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.4), radius: 10)
+                        .fill(
+                            RadialGradient(
+                                colors: [Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.35), .clear],
+                                center: .center,
+                                startRadius: 5,
+                                endRadius: 28
+                            )
+                        )
+                        .frame(width: 48, height: 48)
+                        .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.7), radius: 14)
+
+                    // Neon ring
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.29, green: 0.48, blue: 0.96),
+                                    Color(red: 0.55, green: 0.20, blue: 0.80),
+                                    Color(red: 0.29, green: 0.48, blue: 0.96)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 2.5
+                        )
+                        .frame(width: 46, height: 46)
+                        .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.8), radius: 6)
+
                     Image(systemName: "brain.head.profile")
-                        .font(.system(size: 18, weight: .medium))
+                        .font(.system(size: 21, weight: .bold))
                         .foregroundStyle(.white)
+                        .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.9), radius: 5)
                 }
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text("LunchTalk Saver")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 23, weight: .black, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.white, Color(red: 0.7, green: 0.85, blue: 1.0)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .shadow(color: .white.opacity(0.3), radius: 2)
+
                     Text(store.sessionTitle)
-                        .font(.system(size: 11, weight: .regular, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.5))
                 }
             }
 
             Spacer()
 
-            HStack(spacing: 10) {
-                // Message count
+            HStack(spacing: 14) {
+                // Message count badge with neon effect
                 if store.messages.count > 0 {
-                    Label("\(store.messages.count)", systemImage: "message.fill")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.8))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(.white.opacity(0.08))
-                        .clipShape(Capsule())
+                    HStack(spacing: 7) {
+                        Image(systemName: "message.fill")
+                            .font(.system(size: 12, weight: .semibold))
+                        Text("\(store.messages.count)")
+                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    }
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background {
+                        if #available(macOS 26.0, *) {
+                            Capsule()
+                                .fill(.clear)
+                                .glassEffect(.regular, in: Capsule())
+                        } else {
+                            Capsule()
+                                .fill(.ultraThinMaterial)
+                        }
+                    }
+                    .neonBorder(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.6), cornerRadius: 22)
+                    .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.4), radius: 8)
                 }
 
                 // Running status
@@ -131,15 +177,14 @@ private struct HeaderView: View {
                 // History button
                 Button(action: openHistory) {
                     Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 16, weight: .semibold))
                 }
                 .buttonStyle(GlassButtonStyle())
 
                 // Settings button
                 Button(action: { showSettings = true }) {
                     Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color(red: 0.29, green: 0.48, blue: 0.96))
+                        .font(.system(size: 16, weight: .semibold))
                 }
                 .buttonStyle(GlassButtonStyle())
             }
@@ -152,25 +197,44 @@ private struct SaverHeaderView: View {
 
     var body: some View {
         HStack(alignment: .top) {
-            HStack(spacing: 10) {
+            HStack(spacing: 11) {
                 ZStack {
                     Circle()
-                        .fill(Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.2))
-                        .frame(width: 36, height: 36)
-                        .overlay(Circle().stroke(Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.5), lineWidth: 1))
-                        .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.4), radius: 10)
+                        .fill(
+                            RadialGradient(
+                                colors: [Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.3), .clear],
+                                center: .center,
+                                startRadius: 5,
+                                endRadius: 24
+                            )
+                        )
+                        .frame(width: 42, height: 42)
+                        .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.6), radius: 12)
+
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color(red: 0.29, green: 0.48, blue: 0.96), Color(red: 0.55, green: 0.20, blue: 0.80)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 2
+                        )
+                        .frame(width: 42, height: 42)
+
                     Image(systemName: "brain.head.profile")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(size: 19, weight: .bold))
                         .foregroundStyle(.white)
+                        .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.8), radius: 4)
                 }
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text("LunchTalk Saver")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .font(.system(size: 19, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                     Text(store.sessionTitle)
-                        .font(.system(size: 10, weight: .regular, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.5))
                 }
             }
 
@@ -186,30 +250,57 @@ private struct RunningBadge: View {
     @State private var pulse = false
 
     var body: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: 9) {
             ZStack {
                 if isRunning {
+                    // Pulsing outer ring
                     Circle()
-                        .fill(Color.green.opacity(0.3))
-                        .frame(width: 16, height: 16)
-                        .scaleEffect(pulse ? 1.5 : 1.0)
-                        .opacity(pulse ? 0 : 0.6)
-                        .animation(.easeOut(duration: 1.2).repeatForever(autoreverses: false), value: pulse)
+                        .fill(Color.green.opacity(0.45))
+                        .frame(width: 20, height: 20)
+                        .scaleEffect(pulse ? 1.7 : 1.0)
+                        .opacity(pulse ? 0 : 0.9)
+                        .animation(.easeOut(duration: 1.4).repeatForever(autoreverses: false), value: pulse)
                 }
+                // Core indicator
                 Circle()
-                    .fill(isRunning ? Color.green : Color.gray.opacity(0.5))
-                    .frame(width: 8, height: 8)
-                    .shadow(color: isRunning ? .green.opacity(0.8) : .clear, radius: 4)
+                    .fill(
+                        RadialGradient(
+                            colors: isRunning ?
+                                [Color.green.opacity(0.9), Color.green.opacity(0.6)] :
+                                [Color.gray.opacity(0.5), Color.gray.opacity(0.3)],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 6
+                        )
+                    )
+                    .frame(width: 10, height: 10)
+                    .shadow(color: isRunning ? .green.opacity(0.95) : .clear, radius: 7)
             }
+
             Text(isRunning ? "对话中" : "已停止")
-                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .font(.system(size: 13, weight: .bold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.9))
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(.white.opacity(0.08))
-        .clipShape(Capsule())
-        .overlay(Capsule().stroke(Color.white.opacity(0.1), lineWidth: 1))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background {
+            if #available(macOS 26.0, *) {
+                Capsule()
+                    .fill(.clear)
+                    .glassEffect(.regular, in: Capsule())
+            } else {
+                Capsule()
+                    .fill(.ultraThinMaterial)
+            }
+        }
+        .neonBorder(
+            color: isRunning ? Color.green.opacity(0.7) : Color.white.opacity(0.25),
+            cornerRadius: 22
+        )
+        .shadow(
+            color: isRunning ? Color.green.opacity(0.5) : .clear,
+            radius: 10
+        )
         .onAppear { pulse = isRunning }
         .onChange(of: isRunning) { _, v in pulse = v }
     }
@@ -223,36 +314,34 @@ private struct ChatListView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: 16) {
+                LazyVStack(spacing: 20) {
                     ForEach(store.messages) { message in
                         ChatBubbleView(message: message)
                             .id(message.id)
                     }
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 18)
             }
             .onChange(of: store.messages.count) { _, _ in
                 guard let lastId = store.messages.last?.id else { return }
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
                     proxy.scrollTo(lastId, anchor: .bottom)
                 }
             }
         }
         .background {
-            if #available(macOS 26, *) {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+            if #available(macOS 26.0, *) {
+                RoundedRectangle(cornerRadius: 34, style: .continuous)
                     .fill(.clear)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 34, style: .continuous))
             } else {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                RoundedRectangle(cornerRadius: 34, style: .continuous)
                     .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 28, style: .continuous)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
-                    )
             }
         }
+        .neonBorder(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.45), cornerRadius: 34)
+        .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.25), radius: 20, x: 0, y: 8)
     }
 }
 
@@ -264,10 +353,12 @@ private struct ChatBubbleView: View {
     @State private var appeared = false
 
     private var isExplorer: Bool { message.role == .explorer }
-    private var accentColor: Color { isExplorer ? Color(red: 0.29, green: 0.48, blue: 0.96) : Color(red: 0.00, green: 0.79, blue: 0.63) }
+    private var accentColor: Color {
+        isExplorer ? Color(red: 0.29, green: 0.48, blue: 0.96) : Color(red: 0.00, green: 0.79, blue: 0.63)
+    }
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 10) {
+        HStack(alignment: .bottom, spacing: 14) {
             if isExplorer {
                 avatarView
                 bubbleCard
@@ -279,9 +370,9 @@ private struct ChatBubbleView: View {
             }
         }
         .opacity(appeared ? 1 : 0)
-        .offset(y: appeared ? 0 : 16)
+        .offset(y: appeared ? 0 : 24)
         .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            withAnimation(.spring(response: 0.65, dampingFraction: 0.72)) {
                 appeared = true
             }
         }
@@ -291,33 +382,73 @@ private struct ChatBubbleView: View {
         let name = isExplorer ? store.roleAName : store.roleBName
         let initial = String(name.prefix(1)).uppercased()
         return ZStack {
+            // Outer glow ring
             Circle()
-                .fill(accentColor.opacity(0.2))
-                .frame(width: 38, height: 38)
-                .overlay(
-                    Circle()
-                        .stroke(accentColor.opacity(0.6), lineWidth: 1.5)
+                .fill(
+                    RadialGradient(
+                        colors: [accentColor.opacity(0.45), .clear],
+                        center: .center,
+                        startRadius: 5,
+                        endRadius: 28
+                    )
                 )
-                .shadow(color: accentColor.opacity(0.5), radius: 8)
+                .frame(width: 50, height: 50)
+                .shadow(color: accentColor.opacity(0.75), radius: 14)
+
+            // Inner filled circle
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [accentColor.opacity(0.35), accentColor.opacity(0.18)],
+                        center: .center,
+                        startRadius: 5,
+                        endRadius: 22
+                    )
+                )
+                .frame(width: 44, height: 44)
+
+            // Neon border
+            Circle()
+                .stroke(
+                    LinearGradient(
+                        colors: [accentColor, accentColor.opacity(0.6), accentColor],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 2.5
+                )
+                .frame(width: 44, height: 44)
+                .shadow(color: accentColor.opacity(0.8), radius: 6)
+
             Text(initial)
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .font(.system(size: 17, weight: .black, design: .rounded))
                 .foregroundStyle(.white)
+                .shadow(color: accentColor.opacity(0.7), radius: 5)
         }
     }
 
     private var bubbleCard: some View {
-        VStack(alignment: isExplorer ? .leading : .trailing, spacing: 8) {
+        VStack(alignment: isExplorer ? .leading : .trailing, spacing: 11) {
             // Role & badge
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 Text(isExplorer ? store.roleAName : store.roleBName)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(.system(size: 12, weight: .black, design: .rounded))
                     .foregroundStyle(accentColor)
+                    .shadow(color: accentColor.opacity(0.6), radius: 3)
+
                 Text(message.role.badgeText)
-                    .font(.system(size: 10, weight: .medium))
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 2)
-                    .background(accentColor.opacity(0.2))
-                    .clipShape(Capsule())
+                    .font(.system(size: 10, weight: .bold))
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(accentColor.opacity(0.28))
+                            .overlay(
+                                Capsule()
+                                    .stroke(accentColor.opacity(0.6), lineWidth: 1.5)
+                                    .shadow(color: accentColor.opacity(0.5), radius: 3)
+                            )
+                    )
                     .foregroundStyle(accentColor)
             }
 
@@ -326,27 +457,24 @@ private struct ChatBubbleView: View {
 
             // Time
             Text(timeText)
-                .font(.system(size: 10, weight: .regular, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.4))
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.35))
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
+        .padding(.horizontal, 20)
         .background {
-            if #available(macOS 26, *) {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
+            if #available(macOS 26.0, *) {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .fill(.clear)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
             } else {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .stroke(accentColor.opacity(0.3), lineWidth: 1)
-                    )
             }
         }
-        .shadow(color: accentColor.opacity(0.2), radius: 12, x: 0, y: 4)
-        .frame(maxWidth: 440, alignment: isExplorer ? .leading : .trailing)
+        .neonBorder(color: accentColor.opacity(0.5), cornerRadius: 24)
+        .shadow(color: accentColor.opacity(0.3), radius: 18, x: 0, y: 7)
+        .frame(maxWidth: 480, alignment: isExplorer ? .leading : .trailing)
     }
 
     @ViewBuilder
@@ -356,7 +484,8 @@ private struct ChatBubbleView: View {
         } else {
             Text(message.text)
                 .font(.system(size: 14, weight: .regular, design: .default))
-                .foregroundStyle(.white.opacity(0.92))
+                .foregroundStyle(.white.opacity(0.93))
+                .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -374,48 +503,87 @@ private struct SummarySidePanel: View {
     let summary: SessionSummary
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            // Title
-            HStack(spacing: 8) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.yellow.opacity(0.9))
+        VStack(alignment: .leading, spacing: 18) {
+            // Title with sparkle glow
+            HStack(spacing: 11) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [Color.yellow.opacity(0.4), .clear],
+                                center: .center,
+                                startRadius: 3,
+                                endRadius: 18
+                            )
+                        )
+                        .frame(width: 32, height: 32)
+                        .shadow(color: .yellow.opacity(0.7), radius: 10)
+
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 16, weight: .black))
+                        .foregroundStyle(Color.yellow)
+                        .shadow(color: .yellow.opacity(0.9), radius: 8)
+                }
+
                 Text("实时摘要")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.system(size: 17, weight: .black, design: .rounded))
                     .foregroundStyle(.white)
             }
 
             if !summary.overview.isEmpty {
                 Text(summary.overview)
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .lineSpacing(3)
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(.white.opacity(0.78))
+                    .lineSpacing(5)
+                    .padding(14)
+                    .background {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(.white.opacity(0.07))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .stroke(.white.opacity(0.15), lineWidth: 1.5)
+                            )
+                    }
             }
 
-            FutureSummarySection(title: "要点", items: summary.bullets, accentColor: Color(red: 0.29, green: 0.48, blue: 0.96), icon: "doc.text")
-            FutureSummarySection(title: "灵感点", items: summary.inspirations, accentColor: Color(red: 1.0, green: 0.65, blue: 0.1), icon: "lightbulb")
+            FutureSummarySection(
+                title: "要点",
+                items: summary.bullets,
+                accentColor: Color(red: 0.29, green: 0.48, blue: 0.96),
+                icon: "doc.text"
+            )
+
+            FutureSummarySection(
+                title: "灵感点",
+                items: summary.inspirations,
+                accentColor: Color(red: 1.0, green: 0.65, blue: 0.1),
+                icon: "lightbulb"
+            )
 
             if !summary.highlights.isEmpty {
-                FutureSummarySection(title: "高亮金句", items: summary.highlights, accentColor: Color(red: 0.72, green: 0.35, blue: 0.95), icon: "quote.bubble")
+                FutureSummarySection(
+                    title: "高亮金句",
+                    items: summary.highlights,
+                    accentColor: Color(red: 0.72, green: 0.35, blue: 0.95),
+                    icon: "quote.bubble"
+                )
             }
 
             Spacer()
         }
-        .padding(18)
+        .padding(22)
         .background {
-            if #available(macOS 26, *) {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+            if #available(macOS 26.0, *) {
+                RoundedRectangle(cornerRadius: 34, style: .continuous)
                     .fill(.clear)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 34, style: .continuous))
             } else {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                RoundedRectangle(cornerRadius: 34, style: .continuous)
                     .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 28, style: .continuous)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
-                    )
             }
         }
+        .neonBorder(color: Color.yellow.opacity(0.5), cornerRadius: 34)
+        .shadow(color: Color.yellow.opacity(0.25), radius: 16)
     }
 }
 
@@ -428,36 +596,81 @@ private struct FooterView: View {
 
     var body: some View {
         HStack {
-            // Duration
-            VStack(alignment: .leading, spacing: 2) {
-                Label("Session 时长", systemImage: "timer")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.5))
+            // Duration with neon accent
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 7) {
+                    Image(systemName: "timer")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.8))
+                    Text("Session 时长")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.55))
+                }
+
                 TimelineView(.periodic(from: .now, by: 1)) { _ in
                     Text(store.sessionDurationText)
-                        .font(.system(size: 20, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 26, weight: .black, design: .monospaced))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.white, Color(red: 0.65, green: 0.82, blue: 1.0)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.4), radius: 6)
                 }
             }
 
             Spacer()
 
-            HStack(spacing: 10) {
+            HStack(spacing: 14) {
                 Button(action: restartAction) {
-                    Label("重新开始", systemImage: "arrow.counterclockwise")
-                        .font(.system(size: 13, weight: .medium))
+                    HStack(spacing: 9) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 14, weight: .bold))
+                        Text("重新开始")
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                    }
+                    .foregroundStyle(.white.opacity(0.88))
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 11)
+                    .background {
+                        if #available(macOS 26.0, *) {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(.clear)
+                                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        } else {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(.ultraThinMaterial)
+                        }
+                    }
+                    .neonBorder(color: .white.opacity(0.35), cornerRadius: 16)
                 }
-                .buttonStyle(GlassButtonStyle())
+                .buttonStyle(.plain)
 
                 Button(action: endAction) {
-                    Label("结束", systemImage: "stop.circle.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(Color(red: 0.85, green: 0.25, blue: 0.30))
-                        .clipShape(Capsule())
-                        .shadow(color: Color(red: 0.85, green: 0.25, blue: 0.30).opacity(0.5), radius: 8)
+                    HStack(spacing: 9) {
+                        Image(systemName: "stop.circle.fill")
+                            .font(.system(size: 15, weight: .black))
+                        Text("结束")
+                            .font(.system(size: 15, weight: .black, design: .rounded))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 26)
+                    .padding(.vertical, 11)
+                    .background(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.85, green: 0.25, blue: 0.30),
+                                Color(red: 0.65, green: 0.15, blue: 0.35)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    )
+                    .neonBorder(color: Color(red: 0.85, green: 0.25, blue: 0.30).opacity(0.9), cornerRadius: 16)
+                    .shadow(color: Color(red: 0.85, green: 0.25, blue: 0.30).opacity(0.65), radius: 14, x: 0, y: 5)
                 }
                 .buttonStyle(.plain)
             }
@@ -473,13 +686,27 @@ private struct SettingsView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.024, green: 0.031, blue: 0.063).ignoresSafeArea()
+            // Dark background with subtle aurora
+            Color.black.ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: 16) {
-                Label("设置", systemImage: "slider.horizontal.3")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .padding(.bottom, 4)
+            Ellipse()
+                .fill(Color(red: 0.18, green: 0.22, blue: 0.85).opacity(0.18))
+                .frame(width: 550, height: 450)
+                .blur(radius: 110)
+                .offset(x: -110, y: -160)
+
+            VStack(alignment: .leading, spacing: 20) {
+                HStack(spacing: 12) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(Color(red: 0.29, green: 0.48, blue: 0.96))
+                        .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.7), radius: 8)
+
+                    Text("设置")
+                        .font(.system(size: 26, weight: .black, design: .rounded))
+                        .foregroundStyle(.white)
+                }
+                .padding(.bottom, 10)
 
                 Form {
                     Section("兴趣标签") {
@@ -582,7 +809,7 @@ private struct SettingsView: View {
                         .tint(Color(red: 0.78, green: 0.28, blue: 0.30))
                     }
                 }
-                .frame(minWidth: 480, minHeight: 460)
+                .frame(minWidth: 520, minHeight: 500)
                 .onChange(of: store.historyRetentionDays) { _, _ in
                     store.applyHistoryPolicy()
                 }
@@ -592,13 +819,29 @@ private struct SettingsView: View {
 
                 HStack {
                     Spacer()
-                    Button("完成") {
-                        dismiss()
+                    Button(action: { dismiss() }) {
+                        Text("完成")
+                            .font(.system(size: 15, weight: .black, design: .rounded))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 28)
+                            .padding(.vertical, 11)
+                            .background(
+                                LinearGradient(
+                                    colors: [
+                                        Color(red: 0.29, green: 0.48, blue: 0.96),
+                                        Color(red: 0.20, green: 0.35, blue: 0.75)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            )
+                            .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.6), radius: 12)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.plain)
                 }
             }
-            .padding(20)
+            .padding(26)
         }
     }
 }
@@ -613,97 +856,176 @@ struct SummaryWindowView: View {
 
     var body: some View {
         ZStack {
-            // Background
-            Color(red: 0.024, green: 0.031, blue: 0.063).ignoresSafeArea()
+            // Dark background with aurora
+            Color.black.ignoresSafeArea()
 
-            // Aurora
             Ellipse()
-                .fill(Color(red: 0.18, green: 0.22, blue: 0.85).opacity(0.3))
-                .frame(width: 400, height: 300)
-                .blur(radius: 80)
-                .offset(x: -100, y: -100)
+                .fill(Color(red: 0.18, green: 0.22, blue: 0.85).opacity(0.22))
+                .frame(width: 520, height: 370)
+                .blur(radius: 105)
+                .offset(x: -130, y: -110)
+
+            Ellipse()
+                .fill(Color(red: 0.55, green: 0.20, blue: 0.80).opacity(0.17))
+                .frame(width: 420, height: 320)
+                .blur(radius: 95)
+                .offset(x: 110, y: 90)
 
             VStack(alignment: .leading, spacing: 0) {
-                // Title area
-                HStack(spacing: 12) {
+                // Title area with glow
+                HStack(spacing: 16) {
                     ZStack {
                         Circle()
-                            .fill(Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.2))
-                            .frame(width: 44, height: 44)
-                            .overlay(Circle().stroke(Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.4), lineWidth: 1))
-                            .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.5), radius: 10)
+                            .fill(
+                                RadialGradient(
+                                    colors: [Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.45), .clear],
+                                    center: .center,
+                                    startRadius: 6,
+                                    endRadius: 32
+                                )
+                            )
+                            .frame(width: 56, height: 56)
+                            .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.7), radius: 14)
+
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    colors: [
+                                        Color(red: 0.29, green: 0.48, blue: 0.96),
+                                        Color.yellow,
+                                        Color(red: 0.29, green: 0.48, blue: 0.96)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 2.5
+                            )
+                            .frame(width: 54, height: 54)
+                            .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.8), radius: 8)
+
                         Image(systemName: "sparkles")
-                            .font(.system(size: 20, weight: .medium))
+                            .font(.system(size: 24, weight: .black))
                             .foregroundStyle(.white)
+                            .shadow(color: .yellow.opacity(0.9), radius: 8)
                     }
-                    VStack(alignment: .leading, spacing: 3) {
+
+                    VStack(alignment: .leading, spacing: 5) {
                         Text("Session 摘要")
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .font(.system(size: 22, weight: .black, design: .rounded))
                             .foregroundStyle(.white)
                         Text(store.summary.title)
-                            .font(.system(size: 11, weight: .regular, design: .monospaced))
+                            .font(.system(size: 12, weight: .medium, design: .monospaced))
                             .foregroundStyle(.white.opacity(0.5))
                     }
+
                     Spacer()
+
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.system(size: 14, weight: .black))
                     }
                     .buttonStyle(GlassButtonStyle())
                 }
-                .padding(.bottom, 20)
+                .padding(.bottom, 26)
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 18) {
                         if !store.summary.overview.isEmpty {
                             Text(store.summary.overview)
-                                .font(.system(size: 13))
-                                .foregroundStyle(.white.opacity(0.75))
-                                .padding(12)
-                                .background(.white.opacity(0.05))
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundStyle(.white.opacity(0.82))
+                                .lineSpacing(5)
+                                .padding(16)
+                                .background {
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .fill(.white.opacity(0.08))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                                .stroke(.white.opacity(0.15), lineWidth: 1.5)
+                                        )
+                                }
                         }
 
-                        FutureSummarySection(title: "摘要", items: store.summary.bullets,
-                            accentColor: Color(red: 0.29, green: 0.48, blue: 0.96), icon: "doc.text")
-                        FutureSummarySection(title: "灵感点", items: store.summary.inspirations,
-                            accentColor: Color(red: 1.0, green: 0.65, blue: 0.1), icon: "lightbulb.fill")
+                        FutureSummarySection(
+                            title: "摘要",
+                            items: store.summary.bullets,
+                            accentColor: Color(red: 0.29, green: 0.48, blue: 0.96),
+                            icon: "doc.text"
+                        )
+
+                        FutureSummarySection(
+                            title: "灵感点",
+                            items: store.summary.inspirations,
+                            accentColor: Color(red: 1.0, green: 0.65, blue: 0.1),
+                            icon: "lightbulb.fill"
+                        )
+
                         if !store.summary.highlights.isEmpty {
-                            FutureSummarySection(title: "高亮金句", items: store.summary.highlights,
-                                accentColor: Color(red: 0.72, green: 0.35, blue: 0.95), icon: "quote.bubble.fill")
+                            FutureSummarySection(
+                                title: "高亮金句",
+                                items: store.summary.highlights,
+                                accentColor: Color(red: 0.72, green: 0.35, blue: 0.95),
+                                icon: "quote.bubble.fill"
+                            )
                         }
                     }
                 }
 
-                // Bottom buttons
-                HStack(spacing: 10) {
+                // Bottom buttons with futuristic styling
+                HStack(spacing: 16) {
                     Button(action: copySummary) {
-                        Label("复制摘要", systemImage: "doc.on.clipboard")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(.white.opacity(0.08))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(.white.opacity(0.1), lineWidth: 1))
+                        HStack(spacing: 9) {
+                            Image(systemName: "doc.on.clipboard")
+                                .font(.system(size: 14, weight: .bold))
+                            Text("复制摘要")
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                        }
+                        .foregroundStyle(.white.opacity(0.88))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .background {
+                            if #available(macOS 26.0, *) {
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .fill(.clear)
+                                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            } else {
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .fill(.ultraThinMaterial)
+                            }
+                        }
+                        .neonBorder(color: .white.opacity(0.35), cornerRadius: 16)
                     }
                     .buttonStyle(.plain)
 
                     Button(action: { openWindow(id: "main") }) {
-                        Label("查看对话", systemImage: "bubble.left.and.bubble.right")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(Color(red: 0.29, green: 0.48, blue: 0.96))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.4), radius: 8)
+                        HStack(spacing: 9) {
+                            Image(systemName: "bubble.left.and.bubble.right")
+                                .font(.system(size: 15, weight: .black))
+                            Text("查看对话")
+                                .font(.system(size: 15, weight: .black, design: .rounded))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .background(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.29, green: 0.48, blue: 0.96),
+                                    Color(red: 0.20, green: 0.35, blue: 0.75)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        )
+                        .neonBorder(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.9), cornerRadius: 16)
+                        .shadow(color: Color(red: 0.29, green: 0.48, blue: 0.96).opacity(0.6), radius: 14, x: 0, y: 5)
                     }
                     .buttonStyle(.plain)
                 }
-                .padding(.top, 16)
+                .padding(.top, 22)
             }
-            .padding(24)
+            .padding(30)
         }
         .onAppear { scheduleAutoDismissIfNeeded() }
         .onChange(of: store.autoDismissSeconds) { _, _ in scheduleAutoDismissIfNeeded() }

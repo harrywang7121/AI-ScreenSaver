@@ -59,7 +59,7 @@ struct GlassCard<Content: View>: View {
                 if #available(macOS 26.0, *) {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .fill(.clear)
-                        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
                 } else {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .fill(.ultraThinMaterial)
