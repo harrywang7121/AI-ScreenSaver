@@ -7,9 +7,7 @@ private enum SaverIPC {
     static let distributedName = "haoyu.LunchTalkSaver.sessionEnded"
 
     static var summaryFileURL: URL {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support", isDirectory: true)
-        let folder = base.appendingPathComponent("LunchTalkSaverIPC", isDirectory: true)
+        let folder = URL(fileURLWithPath: "/tmp/LunchTalkSaverIPC", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         return folder.appendingPathComponent("last_summary.json")
     }

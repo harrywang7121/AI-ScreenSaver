@@ -42,12 +42,18 @@ private enum SaverIPC {
     static let distributedName = "haoyu.LunchTalkSaver.sessionEnded"
     static let consumedIDKey = "lastConsumedSaverSummaryID"
 
+    // Use /tmp for cross-process reliability between ScreenSaverEngine and app.
     static var summaryFileURL: URL {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support", isDirectory: true)
-        let folder = base.appendingPathComponent("LunchTalkSaverIPC", isDirectory: true)
+        let folder = URL(fileURLWithPath: "/tmp/LunchTalkSaverIPC", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         return folder.appendingPathComponent("last_summary.json")
+    }
+
+    // Legacy path (older builds wrote here). Keep for backward compatibility.
+    static var legacySummaryFileURL: URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support", isDirectory: true)
+        return base.appendingPathComponent("LunchTalkSaverIPC/last_summary.json")
     }
 }
 
@@ -59,6 +65,7 @@ final class SaverNotificationBridge: ObservableObject {
     private(set) var latestPayload: [String: Any]? = nil
 
     private var timer: Timer?
+    private var summaryWindow: NSWindow?
 
     init() {
         DistributedNotificationCenter.default().addObserver(
@@ -90,11 +97,14 @@ final class SaverNotificationBridge: ObservableObject {
     }
 
     private func pollSummaryFile() {
-        let url = SaverIPC.summaryFileURL
-        guard let data = try? Data(contentsOf: url),
-              let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-        else { return }
-        consumeIfNew(payload)
+        let urls = [SaverIPC.summaryFileURL, SaverIPC.legacySummaryFileURL]
+        for url in urls {
+            guard let data = try? Data(contentsOf: url),
+                  let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            else { continue }
+            consumeIfNew(payload)
+            return
+        }
     }
 
     private func consumeIfNew(_ payload: [String: Any]) {
@@ -105,5 +115,58 @@ final class SaverNotificationBridge: ObservableObject {
         latestPayload = payload
         eventCount += 1
         UserDefaults.standard.set(id, forKey: SaverIPC.consumedIDKey)
+
+        let showPopup = UserDefaults.standard.object(forKey: "showPopupOnExit") as? Bool ?? true
+        if showPopup {
+            Task { @MainActor in
+                showSummaryWindow(payload)
+            }
+        }
+    }
+
+    @MainActor
+    private func showSummaryWindow(_ payload: [String: Any]) {
+        let view = BridgeSummaryView(payload: payload)
+        let hosting = NSHostingController(rootView: view)
+
+        let window = NSWindow(contentViewController: hosting)
+        window.title = "Session Summary"
+        window.setContentSize(NSSize(width: 520, height: 620))
+        window.styleMask = [.titled, .closable, .miniaturizable]
+        window.isReleasedWhenClosed = false
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        summaryWindow = window
+    }
+}
+
+private struct BridgeSummaryView: View {
+    let payload: [String: Any]
+
+    private var title: String { payload["title"] as? String ?? "Session Summary" }
+    private var overview: String { payload["overview"] as? String ?? "" }
+    private var bullets: [String] { payload["bullets"] as? [String] ?? [] }
+    private var inspirations: [String] { payload["inspirations"] as? [String] ?? [] }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(title).font(.title3).bold()
+            if !overview.isEmpty { Text(overview).foregroundStyle(.secondary) }
+
+            if !bullets.isEmpty {
+                Text("摘要").font(.headline)
+                ForEach(bullets, id: \.self) { Text("• \($0)") }
+            }
+            if !inspirations.isEmpty {
+                Text("灵感点").font(.headline)
+                ForEach(inspirations, id: \.self) { Text("• \($0)") }
+            }
+            Spacer()
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(NSColor.windowBackgroundColor))
     }
 }
