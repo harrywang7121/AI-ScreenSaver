@@ -1,5 +1,29 @@
 import SwiftUI
 
+// SaverThinkingDotsView - animated dots for "思考中…" in screen saver
+private struct SaverThinkingDotsView: View {
+    @State private var animating = false
+
+    var body: some View {
+        HStack(spacing: 5) {
+            ForEach(0..<3, id: \.self) { index in
+                Circle()
+                    .fill(Color.white.opacity(0.8))
+                    .frame(width: 7, height: 7)
+                    .scaleEffect(animating ? 1.0 : 0.5)
+                    .opacity(animating ? 1.0 : 0.4)
+                    .animation(
+                        .easeInOut(duration: 0.5)
+                            .repeatForever(autoreverses: true)
+                            .delay(Double(index) * 0.18),
+                        value: animating
+                    )
+            }
+        }
+        .onAppear { animating = true }
+    }
+}
+
 /// Simplified view for Screen Saver bundle - no App-only dependencies
 struct SaverContentView: View {
     @ObservedObject var store: SessionStore
@@ -99,16 +123,43 @@ struct SaverContentView: View {
 struct SaverBubbleView: View {
     let message: Message
     @ObservedObject var store: SessionStore
+    @State private var appeared = false
 
     var body: some View {
-        HStack {
+        HStack(alignment: .bottom, spacing: 8) {
             if message.role == .explorer {
+                avatarView
                 bubbleContent
                 Spacer(minLength: 40)
             } else {
                 Spacer(minLength: 40)
                 bubbleContent
+                avatarView
             }
+        }
+    }
+
+    private var avatarView: some View {
+        let initial = (message.role == .explorer ? store.roleAName : store.roleBName).prefix(1).uppercased()
+        return ZStack {
+            Circle()
+                .fill(message.role.bubbleColor)
+                .frame(width: 36, height: 36)
+            Text(initial)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(.white)
+        }
+    }
+
+    @ViewBuilder
+    private var messageContent: some View {
+        if message.text == "思考中…" {
+            SaverThinkingDotsView()
+        } else {
+            Text(message.text)
+                .font(.custom("Avenir Next", size: 15))
+                .foregroundStyle(.white)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -127,10 +178,7 @@ struct SaverBubbleView: View {
                     .clipShape(Capsule())
             }
 
-            Text(message.text)
-                .font(.custom("Avenir Next", size: 15))
-                .foregroundStyle(.white)
-                .fixedSize(horizontal: false, vertical: true)
+            messageContent
 
             Text(Self.timeFormatter.string(from: message.time))
                 .font(.custom("Avenir Next", size: 11))
@@ -141,6 +189,13 @@ struct SaverBubbleView: View {
         .background(message.role.bubbleColor.opacity(0.85))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .frame(maxWidth: 420, alignment: message.role == .explorer ? .leading : .trailing)
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 12)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.35)) {
+                appeared = true
+            }
+        }
     }
 
     private var nameForRole: String {
@@ -174,11 +229,23 @@ struct SaverSummaryPanel: View {
                     .foregroundStyle(.white.opacity(0.8))
             }
 
-            SaverSummarySection(title: "要点", items: summary.bullets)
-            SaverSummarySection(title: "灵感点", items: summary.inspirations)
+            SaverSummarySection(
+                title: "要点",
+                items: summary.bullets,
+                accentColor: Color(red: 0.24, green: 0.44, blue: 0.92)
+            )
+            SaverSummarySection(
+                title: "灵感点",
+                items: summary.inspirations,
+                accentColor: Color(red: 0.95, green: 0.60, blue: 0.20)
+            )
 
             if !summary.highlights.isEmpty {
-                SaverSummarySection(title: "高亮金句", items: summary.highlights)
+                SaverSummarySection(
+                    title: "高亮金句",
+                    items: summary.highlights,
+                    accentColor: Color(red: 0.72, green: 0.40, blue: 0.85)
+                )
             }
 
             Spacer()
@@ -192,12 +259,25 @@ struct SaverSummaryPanel: View {
 struct SaverSummarySection: View {
     let title: String
     let items: [String]
+    let accentColor: Color
+
+    init(title: String, items: [String], accentColor: Color = .white.opacity(0.6)) {
+        self.title = title
+        self.items = items
+        self.accentColor = accentColor
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.custom("Avenir Next", size: 13))
-                .foregroundStyle(.white.opacity(0.75))
+            HStack(spacing: 6) {
+                Rectangle()
+                    .fill(accentColor)
+                    .frame(width: 3, height: 14)
+                    .cornerRadius(2)
+                Text(title)
+                    .font(.custom("Avenir Next", size: 13))
+                    .foregroundStyle(.white.opacity(0.75))
+            }
 
             ForEach(items, id: \.self) { item in
                 HStack(alignment: .top, spacing: 6) {

@@ -172,6 +172,14 @@ final class SessionStore: ObservableObject {
         didSet { UserDefaults.standard.set(roleBPersonality, forKey: "roleBPersonality") }
     }
 
+    // 兴趣标签
+    @Published var interestTags: Set<String> {
+        didSet {
+            let arr = Array(interestTags)
+            UserDefaults.standard.set(arr, forKey: "interestTags")
+        }
+    }
+
     var sessionStart: Date?
     var sessionEnd: Date?
 
@@ -218,6 +226,10 @@ final class SessionStore: ObservableObject {
         self.messageLengthLevel = UserDefaults.standard.object(forKey: "messageLengthLevel") as? Double ?? 0.3
         self.roleAPersonality = UserDefaults.standard.string(forKey: "roleAPersonality") ?? "默认"
         self.roleBPersonality = UserDefaults.standard.string(forKey: "roleBPersonality") ?? "务实型"
+
+        // 兴趣标签
+        let savedTags = UserDefaults.standard.stringArray(forKey: "interestTags") ?? []
+        self.interestTags = Set(savedTags)
 
         self.messageIndex = 0
         self.currentTopic = "AI 助手在工作流中的价值"

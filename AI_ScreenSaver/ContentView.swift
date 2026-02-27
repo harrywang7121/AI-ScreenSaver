@@ -6,6 +6,30 @@ enum ContentMode {
     case saver
 }
 
+// ThinkingDotsView - animated dots for "思考中…"
+private struct ThinkingDotsView: View {
+    @State private var animating = false
+
+    var body: some View {
+        HStack(spacing: 5) {
+            ForEach(0..<3, id: \.self) { index in
+                Circle()
+                    .fill(Color.white.opacity(0.8))
+                    .frame(width: 7, height: 7)
+                    .scaleEffect(animating ? 1.0 : 0.5)
+                    .opacity(animating ? 1.0 : 0.4)
+                    .animation(
+                        .easeInOut(duration: 0.5)
+                            .repeatForever(autoreverses: true)
+                            .delay(Double(index) * 0.18),
+                        value: animating
+                    )
+            }
+        }
+        .onAppear { animating = true }
+    }
+}
+
 struct ContentView: View {
     @EnvironmentObject private var store: SessionStore
     @Environment(\.openWindow) private var openWindow
@@ -97,6 +121,16 @@ private struct HeaderView: View {
             Spacer()
 
             HStack(spacing: 12) {
+                if store.messages.count > 0 {
+                    Text("💬 \(store.messages.count)")
+                        .font(.custom("Avenir Next", size: 13))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.white.opacity(0.12))
+                        .clipShape(Capsule())
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+
                 RunningBadge(isRunning: store.isRunning)
 
                 Button("历史") {
@@ -186,16 +220,43 @@ private struct ChatBubbleView: View {
     @EnvironmentObject private var store: SessionStore
 
     let message: Message
+    @State private var appeared = false
 
     var body: some View {
-        HStack {
+        HStack(alignment: .bottom, spacing: 8) {
             if message.role == .explorer {
+                avatarView
                 bubble
                 Spacer(minLength: 40)
             } else {
                 Spacer(minLength: 40)
                 bubble
+                avatarView
             }
+        }
+    }
+
+    private var avatarView: some View {
+        let initial = (message.role == .explorer ? store.roleAName : store.roleBName).prefix(1).uppercased()
+        return ZStack {
+            Circle()
+                .fill(message.role.bubbleColor)
+                .frame(width: 36, height: 36)
+            Text(initial)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(.white)
+        }
+    }
+
+    @ViewBuilder
+    private var messageContent: some View {
+        if message.text == "思考中…" {
+            ThinkingDotsView()
+        } else {
+            Text(message.text)
+                .font(.custom("Avenir Next", size: 15))
+                .foregroundStyle(.white)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -214,10 +275,7 @@ private struct ChatBubbleView: View {
                     .clipShape(Capsule())
             }
 
-            Text(message.text)
-                .font(.custom("Avenir Next", size: 15))
-                .foregroundStyle(.white)
-                .fixedSize(horizontal: false, vertical: true)
+            messageContent
 
             Text(Self.timeFormatter.string(from: message.time))
                 .font(.custom("Avenir Next", size: 11))
@@ -228,6 +286,13 @@ private struct ChatBubbleView: View {
         .background(message.role.bubbleColor.opacity(0.85))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .frame(maxWidth: 420, alignment: message.role == .explorer ? .leading : .trailing)
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 12)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.35)) {
+                appeared = true
+            }
+        }
     }
 
     private var nameForRole: String {
@@ -261,11 +326,23 @@ private struct SummarySidePanel: View {
                     .foregroundStyle(.white.opacity(0.8))
             }
 
-            SummarySection(title: "要点", items: summary.bullets)
-            SummarySection(title: "灵感点", items: summary.inspirations)
+            SummarySection(
+                title: "要点",
+                items: summary.bullets,
+                accentColor: Color(red: 0.24, green: 0.44, blue: 0.92)
+            )
+            SummarySection(
+                title: "灵感点",
+                items: summary.inspirations,
+                accentColor: Color(red: 0.95, green: 0.60, blue: 0.20)
+            )
 
             if !summary.highlights.isEmpty {
-                SummarySection(title: "高亮金句", items: summary.highlights)
+                SummarySection(
+                    title: "高亮金句",
+                    items: summary.highlights,
+                    accentColor: Color(red: 0.72, green: 0.40, blue: 0.85)
+                )
             }
 
             Spacer()
@@ -279,12 +356,25 @@ private struct SummarySidePanel: View {
 private struct SummarySection: View {
     let title: String
     let items: [String]
+    let accentColor: Color
+
+    init(title: String, items: [String], accentColor: Color = .white.opacity(0.6)) {
+        self.title = title
+        self.items = items
+        self.accentColor = accentColor
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.custom("Avenir Next", size: 13))
-                .foregroundStyle(.white.opacity(0.75))
+            HStack(spacing: 6) {
+                Rectangle()
+                    .fill(accentColor)
+                    .frame(width: 3, height: 14)
+                    .cornerRadius(2)
+                Text(title)
+                    .font(.custom("Avenir Next", size: 13))
+                    .foregroundStyle(.white.opacity(0.75))
+            }
 
             ForEach(items, id: \.self) { item in
                 HStack(alignment: .top, spacing: 6) {
@@ -351,6 +441,22 @@ private struct SettingsView: View {
                 .padding(.bottom, 4)
 
             Form {
+                Section("兴趣标签") {
+                    let allTags = ["AI 与产品", "硬件 & 前沿", "投资 & 商业", "效率 & 工作流", "创意 & 设计", "随便聊"]
+                    ForEach(allTags, id: \.self) { tag in
+                        Toggle(tag, isOn: Binding(
+                            get: { store.interestTags.contains(tag) },
+                            set: { isOn in
+                                if isOn {
+                                    store.interestTags.insert(tag)
+                                } else {
+                                    store.interestTags.remove(tag)
+                                }
+                            }
+                        ))
+                    }
+                }
+
                 Section("对话节奏") {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("对话频率：\(Int(store.messageInterval)) 秒/句")
@@ -468,9 +574,13 @@ struct SummaryWindowView: View {
                 .ignoresSafeArea()
 
             VStack(alignment: .leading, spacing: 16) {
-                Text(store.summary.title)
-                    .font(.custom("Avenir Next", size: 20))
-                    .foregroundStyle(.white)
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .foregroundStyle(.white.opacity(0.9))
+                    Text(store.summary.title)
+                        .font(.custom("Avenir Next", size: 20))
+                        .foregroundStyle(.white)
+                }
 
                 if !store.summary.overview.isEmpty {
                     Text(store.summary.overview)
@@ -478,11 +588,33 @@ struct SummaryWindowView: View {
                         .foregroundStyle(.white.opacity(0.8))
                 }
 
-                SummarySection(title: "摘要", items: store.summary.bullets)
-                SummarySection(title: "灵感点", items: store.summary.inspirations)
+                SummarySection(
+                    title: "摘要",
+                    items: store.summary.bullets,
+                    accentColor: Color(red: 0.24, green: 0.44, blue: 0.92)
+                )
+                .padding(12)
+                .background(Color.white.opacity(0.06))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                SummarySection(
+                    title: "💡 灵感点",
+                    items: store.summary.inspirations,
+                    accentColor: Color(red: 0.95, green: 0.60, blue: 0.20)
+                )
+                .padding(12)
+                .background(Color.white.opacity(0.06))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                 if !store.summary.highlights.isEmpty {
-                    SummarySection(title: "高亮金句", items: store.summary.highlights)
+                    SummarySection(
+                        title: "高亮金句",
+                        items: store.summary.highlights,
+                        accentColor: Color(red: 0.72, green: 0.40, blue: 0.85)
+                    )
+                    .padding(12)
+                    .background(Color.white.opacity(0.06))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
 
                 Spacer()
@@ -545,6 +677,8 @@ struct SummaryWindowView: View {
 }
 
 private struct BackgroundView: View {
+    @State private var pulse = false
+
     var body: some View {
         LinearGradient(
             colors: [
@@ -561,13 +695,22 @@ private struct BackgroundView: View {
                 .fill(Color.white.opacity(0.04))
                 .frame(width: 520, height: 520)
                 .offset(x: -240, y: -200)
+                .scaleEffect(pulse ? 1.05 : 0.95)
+                .opacity(pulse ? 0.06 : 0.03)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 80)
                 .fill(Color.white.opacity(0.03))
                 .frame(width: 680, height: 420)
                 .offset(x: 260, y: 240)
+                .scaleEffect(pulse ? 0.96 : 1.04)
+                .opacity(pulse ? 0.04 : 0.025)
         )
+        .onAppear {
+            withAnimation(.easeInOut(duration: 7).repeatForever(autoreverses: true)) {
+                pulse = true
+            }
+        }
     }
 }
 
