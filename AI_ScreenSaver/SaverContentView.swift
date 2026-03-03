@@ -3,95 +3,93 @@ import SwiftUI
 /// Simplified view for Screen Saver bundle - no App-only dependencies
 struct SaverContentView: View {
     @ObservedObject var store: SessionStore
+    @State private var breathing = false
 
     var body: some View {
         ZStack {
-            // Background gradient
             LinearGradient(
                 colors: [
-                    Color(red: 0.06, green: 0.08, blue: 0.15),
-                    Color(red: 0.10, green: 0.13, blue: 0.22),
-                    Color(red: 0.15, green: 0.10, blue: 0.18)
+                    Color(red: 0.05, green: 0.07, blue: 0.15),
+                    Color(red: 0.09, green: 0.11, blue: 0.20),
+                    Color(red: 0.16, green: 0.11, blue: 0.20)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
-            .overlay(
-                RoundedRectangle(cornerRadius: 60)
-                    .fill(Color.white.opacity(0.04))
+            .overlay(alignment: .topLeading) {
+                Circle()
+                    .fill(.white.opacity(0.08))
+                    .frame(width: 420, height: 420)
+                    .blur(radius: 50)
+                    .offset(x: -120, y: -160)
+                    .scaleEffect(breathing ? 1.08 : 0.94)
+            }
+            .overlay(alignment: .bottomTrailing) {
+                Circle()
+                    .fill(Color.blue.opacity(0.16))
                     .frame(width: 520, height: 520)
-                    .offset(x: -240, y: -200)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 80)
-                    .fill(Color.white.opacity(0.03))
-                    .frame(width: 680, height: 420)
-                    .offset(x: 260, y: 240)
-            )
+                    .blur(radius: 80)
+                    .offset(x: 140, y: 180)
+                    .scaleEffect(breathing ? 0.95 : 1.08)
+            }
 
-            VStack(spacing: 20) {
-                // Header
+            VStack(spacing: 18) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("LunchTalk Saver")
-                            .font(.custom("Avenir Next", size: 26))
+                        Text("LunchTalk Saver v2")
+                            .font(.system(size: 30, weight: .semibold, design: .rounded))
                             .foregroundStyle(.white)
                         Text(store.sessionTitle)
-                            .font(.custom("Avenir Next", size: 14))
-                            .foregroundStyle(.white.opacity(0.8))
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.72))
                     }
 
                     Spacer()
 
-                    // Running badge
                     HStack(spacing: 8) {
                         Circle()
                             .fill(store.isRunning ? Color.green : Color.gray)
-                            .frame(width: 10, height: 10)
+                            .frame(width: 8, height: 8)
                         Text(store.isRunning ? "对话中" : "已停止")
-                            .font(.custom("Avenir Next", size: 14))
+                            .font(.system(size: 13, weight: .medium))
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.15))
-                    .clipShape(Capsule())
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.white.opacity(0.95))
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .overlay {
+                        Capsule().stroke(Color.white.opacity(0.18), lineWidth: 1)
+                    }
                 }
 
-                // Chat and summary
-                HStack(alignment: .top, spacing: 18) {
-                    // Chat list
-                    ScrollViewReader { proxy in
-                        ScrollView {
-                            LazyVStack(spacing: 18) {
-                                ForEach(store.messages) { message in
-                                    SaverBubbleView(message: message, store: store)
-                                        .id(message.id)
-                                }
-                            }
-                            .padding(.horizontal, 6)
-                            .padding(.bottom, 6)
-                        }
-                        .onChange(of: store.messages.count) { _, _ in
-                            guard let lastId = store.messages.last?.id else { return }
-                            withAnimation(.easeOut(duration: 0.4)) {
-                                proxy.scrollTo(lastId, anchor: .bottom)
-                            }
+                HStack(alignment: .top, spacing: 16) {
+                    VStack(spacing: 14) {
+                        ForEach(Array(store.messages.suffix(8))) { message in
+                            SaverBubbleView(message: message, store: store)
                         }
                     }
-                    .padding(18)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    .padding(16)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                            .stroke(Color.white.opacity(0.16), lineWidth: 1)
+                    }
+                    .clipped()
 
-                    // Summary panel
                     if store.showSummaryInSaver {
                         SaverSummaryPanel(summary: store.summary)
-                            .frame(maxWidth: 320)
+                            .frame(maxWidth: 340)
                     }
                 }
             }
-            .padding(28)
+            .padding(24)
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 7).repeatForever(autoreverses: true)) {
+                breathing = true
+            }
         }
     }
 }
@@ -104,43 +102,48 @@ struct SaverBubbleView: View {
         HStack {
             if message.role == .explorer {
                 bubbleContent
-                Spacer(minLength: 40)
+                Spacer(minLength: 46)
             } else {
-                Spacer(minLength: 40)
+                Spacer(minLength: 46)
                 bubbleContent
             }
         }
     }
 
     private var bubbleContent: some View {
-        VStack(alignment: message.role == .explorer ? .leading : .trailing, spacing: 6) {
+        VStack(alignment: message.role == .explorer ? .leading : .trailing, spacing: 7) {
             HStack(spacing: 8) {
                 Text(nameForRole)
-                    .font(.custom("Avenir Next", size: 12))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.78))
 
                 Text(message.role.badgeText)
-                    .font(.custom("Avenir Next", size: 11))
+                    .font(.system(size: 11, weight: .semibold))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
-                    .background(message.role.backgroundTint.opacity(0.6))
+                    .background(message.role.backgroundTint.opacity(0.55))
                     .clipShape(Capsule())
             }
 
             Text(message.text)
-                .font(.custom("Avenir Next", size: 15))
+                .font(.system(size: 15, weight: .regular))
                 .foregroundStyle(.white)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(Self.timeFormatter.string(from: message.time))
-                .font(.custom("Avenir Next", size: 11))
-                .foregroundStyle(.white.opacity(0.6))
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white.opacity(0.56))
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 14)
-        .background(message.role.bubbleColor.opacity(0.85))
+        .background(message.role == .explorer ? Color.white.opacity(0.10) : Color.accentColor.opacity(0.30))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.white.opacity(0.14), lineWidth: 1)
+        }
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .frame(maxWidth: 420, alignment: message.role == .explorer ? .leading : .trailing)
+        .frame(maxWidth: 460, alignment: message.role == .explorer ? .leading : .trailing)
+        .transition(.asymmetric(insertion: .move(edge: message.role == .explorer ? .leading : .trailing).combined(with: .opacity), removal: .opacity))
     }
 
     private var nameForRole: String {
@@ -163,15 +166,15 @@ struct SaverSummaryPanel: View {
     let summary: SessionSummary
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
             Text("实时摘要")
-                .font(.custom("Avenir Next", size: 18))
+                .font(.system(size: 19, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
 
             if !summary.overview.isEmpty {
                 Text(summary.overview)
-                    .font(.custom("Avenir Next", size: 13))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(.white.opacity(0.82))
             }
 
             SaverSummarySection(title: "要点", items: summary.bullets)
@@ -184,8 +187,11 @@ struct SaverSummaryPanel: View {
             Spacer()
         }
         .padding(18)
-        .background(Color.white.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(Color.white.opacity(0.16), lineWidth: 1)
+        }
     }
 }
 
@@ -196,17 +202,17 @@ struct SaverSummarySection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.custom("Avenir Next", size: 13))
-                .foregroundStyle(.white.opacity(0.75))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.72))
 
             ForEach(items, id: \.self) { item in
-                HStack(alignment: .top, spacing: 6) {
+                HStack(alignment: .top, spacing: 7) {
                     Circle()
-                        .fill(Color.white.opacity(0.6))
+                        .fill(Color.white.opacity(0.65))
                         .frame(width: 4, height: 4)
                         .padding(.top, 6)
                     Text(item)
-                        .font(.custom("Avenir Next", size: 13))
+                        .font(.system(size: 13, weight: .regular))
                         .foregroundStyle(.white)
                         .fixedSize(horizontal: false, vertical: true)
                 }

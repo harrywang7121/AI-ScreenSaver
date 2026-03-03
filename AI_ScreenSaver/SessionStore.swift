@@ -158,6 +158,7 @@ final class SessionStore: ObservableObject {
         didSet { UserDefaults.standard.set(showCostEstimate, forKey: "showCostEstimate") }
     }
 
+
     // 对话风格
     @Published var divergenceLevel: Double {
         didSet { UserDefaults.standard.set(divergenceLevel, forKey: "divergenceLevel") }
@@ -371,9 +372,9 @@ final class SessionStore: ObservableObject {
     }
 
     private func generateMessage(for role: Role, topic: String) async -> String {
-        // 如果 API Key 为空，直接返回模板
-        guard !apiKey.isEmpty else {
-            return nextMessageText(for: role)
+        let effectiveKey = resolveAPIKey()
+        guard !effectiveKey.isEmpty else {
+            return "API调用失败(no-api-key)"
         }
 
         // 计算目标长度
@@ -406,65 +407,87 @@ final class SessionStore: ObservableObject {
 
         // 发送 API 请求
         do {
-            guard let url = URL(string: "\(apiEndpoint)/chat/completions") else {
+            let endpoint = apiEndpoint.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "https://api.openai.com/v1" : apiEndpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+            let model = apiModel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "gpt-4o-mini" : apiModel.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            var adjustedBody = requestBody
+            adjustedBody["model"] = model
+
+            guard let url = URL(string: "\(endpoint)/chat/completions") else {
                 return nextMessageText(for: role)
             }
 
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-            request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+            request.addValue("Bearer \(effectiveKey)", forHTTPHeaderField: "Authorization")
+            request.httpBody = try JSONSerialization.data(withJSONObject: adjustedBody)
             request.timeoutInterval = 30
 
             let (data, response) = try await URLSession.shared.data(for: request)
 
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200...299).contains(httpResponse.statusCode) else {
-                print("API request failed with status: \((response as? HTTPURLResponse)?.statusCode ?? -1)")
-                return nextMessageText(for: role)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return "API调用失败(no-http-response)"
+            }
+            guard (200...299).contains(httpResponse.statusCode) else {
+                let body = String(data: data, encoding: .utf8) ?? ""
+                print("API request failed with status: \(httpResponse.statusCode), body: \(body.prefix(200))")
+                return "API调用失败(status: \(httpResponse.statusCode))"
             }
 
-            // 解析响应
+            // 解析响应（兼容 string / content parts）
             if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                let choices = json["choices"] as? [[String: Any]],
                let firstChoice = choices.first,
-               let message = firstChoice["message"] as? [String: Any],
-               let content = message["content"] as? String {
-                return content.trimmingCharacters(in: .whitespacesAndNewlines)
+               let message = firstChoice["message"] as? [String: Any] {
+
+                if let content = message["content"] as? String, !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    return content.trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+
+                if let parts = message["content"] as? [[String: Any]] {
+                    let text = parts.compactMap { $0["text"] as? String }.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !text.isEmpty { return text }
+                }
             }
 
-            return nextMessageText(for: role)
+            return "API调用失败(parse-empty)"
         } catch {
             print("API error: \(error.localizedDescription)")
-            return nextMessageText(for: role)
+            return "API调用失败(error: \(error.localizedDescription))"
         }
     }
 
-    private func nextMessageText(for role: Role) -> String {
-        let topic = currentTopic
-        switch role {
-        case .explorer:
-            let templates = [
-                "如果把 \(topic) 当成一个长期资产，我们现在最被低估的环节是什么？",
-                "有没有办法用 \(topic) 做一个更轻的切入点，先让团队尝到甜头？",
-                "\(topic) 里最值得做成默认流程的动作可能是哪一个？",
-                "从用户感知角度，\(topic) 应该先解决哪种「烦躁时刻」？",
-                "我们能不能把 \(topic) 拆成三个层级：探索、验证、规模化？",
-                "要是把 \(topic) 当成产品卖给自己，你觉得核心卖点是哪一句？"
-            ]
-            return templates.randomElement() ?? "我们可以先从 \(topic) 的轻量验证入手。"
-        case .builder:
-            let templates = [
-                "可以先选 1 个典型场景，定义输入、输出和成功指标，再迭代。",
-                "我建议把 \(topic) 的动作拆成三步：触发、生成、回收。",
-                "我们需要一个可观测指标，比如节省的时间或减少的沟通轮次。",
-                "落地上先做最小闭环：收集需求、生成建议、导出可执行清单。",
-                "建议设一个 2 周的小实验，验证是否提升决策速度。",
-                "关键是节奏，先把对话频率和摘要质量稳定下来。"
-            ]
-            return templates.randomElement() ?? "我们先定义 \(topic) 的最小闭环。"
+
+
+    private func resolveAPIKey() -> String {
+        let direct = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !direct.isEmpty { return direct }
+
+        let env = ProcessInfo.processInfo.environment["OPENAI_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !env.isEmpty { return env }
+
+        // Optional local config file: ~/.ai-screensaver.env
+        // Format example: OPENAI_API_KEY=sk-xxxx
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let envFile = home.appendingPathComponent(".ai-screensaver.env")
+        if let content = try? String(contentsOf: envFile, encoding: .utf8) {
+            for raw in content.split(separator: "\n") {
+                let line = raw.trimmingCharacters(in: .whitespaces)
+                guard !line.isEmpty, !line.hasPrefix("#") else { continue }
+                if line.hasPrefix("OPENAI_API_KEY=") {
+                    let value = String(line.dropFirst("OPENAI_API_KEY=".count))
+                        .trimmingCharacters(in: CharacterSet(charactersIn: " \t\"'"))
+                    if !value.isEmpty { return value }
+                }
+            }
         }
+
+        return ""
+    }
+
+    private func nextMessageText(for role: Role) -> String {
+        return "API调用失败(generic)"
     }
 
     private func updateSummary(force: Bool) {

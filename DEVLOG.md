@@ -1,5 +1,14 @@
 # 开发日志
 
+## 2026-03-01
+- UI 全面升级为 Apple Website 风格：系统字体（SF 系列）、玻璃拟态（Material）、柔光渐变与轻量边框
+- 主界面重构：头部状态区、聊天面板、摘要侧栏、底部操作按钮统一视觉层级
+- 屏保视图（SaverContentView）对齐主界面设计语言，保持主应用与 .saver 体验一致
+- 历史页面视觉优化：列表与详情排版升级、对话气泡与按钮样式统一
+- 版本管理：提交独立 UI 重构 commit，便于后续回滚与迭代
+- 动效增强：背景光斑呼吸动画 + 新消息入场过渡（左右滑入 + 淡入）
+- 构建验证通过：xcodebuild（macOS destination）成功
+
 ## 2026-02-26
 - 接入真实 AI API（OpenAI 兼容接口）：generateMessage 支持异步调用，占位消息替换策略
 - 新增设置项：API Endpoint、Model、API Key、最大输出 tokens、费用估算开关

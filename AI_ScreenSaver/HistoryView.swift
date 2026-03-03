@@ -13,16 +13,16 @@ struct HistoryView: View {
                 ForEach(store.history) { record in
                     VStack(alignment: .leading, spacing: 6) {
                         Text(record.summary.title)
-                            .font(.custom("Avenir Next", size: 14))
+                            .font(.system(size: 14, weight: .semibold))
                         Text(Self.dateFormatter.string(from: record.start))
-                            .font(.custom("Avenir Next", size: 11))
+                            .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(.secondary)
                     }
                     .padding(.vertical, 4)
                     .tag(record.id)
                 }
             }
-            .frame(minWidth: 240)
+            .frame(minWidth: 260)
 
             Divider()
 
@@ -30,11 +30,11 @@ struct HistoryView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     if let record = selectedRecord {
                         Text(record.summary.title)
-                            .font(.custom("Avenir Next", size: 20))
+                            .font(.system(size: 24, weight: .semibold, design: .rounded))
 
                         if !record.summary.overview.isEmpty {
                             Text(record.summary.overview)
-                                .font(.custom("Avenir Next", size: 13))
+                                .font(.system(size: 13, weight: .regular))
                                 .foregroundStyle(.secondary)
                         }
 
@@ -49,11 +49,11 @@ struct HistoryView: View {
 
                         if record.messages.isEmpty {
                             Text("未保存完整对话，请在设置中开启“保存完整对话”。")
-                                .font(.custom("Avenir Next", size: 12))
+                                .font(.system(size: 12, weight: .regular))
                                 .foregroundStyle(.secondary)
                         } else {
                             Text("完整对话")
-                                .font(.custom("Avenir Next", size: 14))
+                                .font(.system(size: 14, weight: .semibold))
                                 .foregroundStyle(.secondary)
 
                             LazyVStack(spacing: 12) {
@@ -63,7 +63,7 @@ struct HistoryView: View {
                             }
                         }
 
-                        HStack(spacing: 12) {
+                        HStack(spacing: 10) {
                             Button("复制摘要") {
                                 copySummary(for: record)
                             }
@@ -72,18 +72,19 @@ struct HistoryView: View {
                             Button("打开主屏") {
                                 openWindow(id: "main")
                             }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(.borderedProminent)
                         }
                     } else {
                         Text("选择一条历史记录查看详情")
-                            .font(.custom("Avenir Next", size: 14))
+                            .font(.system(size: 14, weight: .regular))
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(20)
+                .padding(22)
             }
         }
-        .frame(minWidth: 900, minHeight: 640)
+        .background(.regularMaterial)
+        .frame(minWidth: 920, minHeight: 650)
         .onAppear {
             if selection == nil {
                 selection = store.history.first?.id
@@ -126,17 +127,17 @@ private struct HistorySection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.custom("Avenir Next", size: 12))
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
 
             ForEach(items, id: \.self) { item in
-                HStack(alignment: .top, spacing: 6) {
+                HStack(alignment: .top, spacing: 7) {
                     Circle()
                         .fill(Color.secondary.opacity(0.7))
                         .frame(width: 4, height: 4)
                         .padding(.top, 6)
                     Text(item)
-                        .font(.custom("Avenir Next", size: 13))
+                        .font(.system(size: 13, weight: .regular))
                         .foregroundStyle(.primary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -154,9 +155,9 @@ private struct HistoryBubbleView: View {
         HStack {
             if message.role == .explorer {
                 bubble
-                Spacer(minLength: 40)
+                Spacer(minLength: 44)
             } else {
-                Spacer(minLength: 40)
+                Spacer(minLength: 44)
                 bubble
             }
         }
@@ -166,11 +167,11 @@ private struct HistoryBubbleView: View {
         VStack(alignment: message.role == .explorer ? .leading : .trailing, spacing: 6) {
             HStack(spacing: 8) {
                 Text(nameForRole)
-                    .font(.custom("Avenir Next", size: 12))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
 
                 Text(message.role.badgeText)
-                    .font(.custom("Avenir Next", size: 11))
+                    .font(.system(size: 11, weight: .semibold))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
                     .background(message.role.backgroundTint.opacity(0.2))
@@ -178,15 +179,21 @@ private struct HistoryBubbleView: View {
             }
 
             Text(message.text)
-                .font(.custom("Avenir Next", size: 14))
+                .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(.primary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 14)
-        .background(message.role.bubbleColor.opacity(0.12))
+        .background(
+            message.role == .explorer ? Color.secondary.opacity(0.08) : Color.accentColor.opacity(0.12)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+        }
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .frame(maxWidth: 520, alignment: message.role == .explorer ? .leading : .trailing)
+        .frame(maxWidth: 560, alignment: message.role == .explorer ? .leading : .trailing)
     }
 
     private var nameForRole: String {

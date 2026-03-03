@@ -11,6 +11,7 @@ struct ContentView: View {
     @Environment(\.openWindow) private var openWindow
 
     @State private var showSettings = false
+    @State private var backdropBreathing = false
     let mode: ContentMode
 
     private var isSaverMode: Bool {
@@ -19,9 +20,9 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            BackgroundView()
+            AppleBackdropView()
 
-            VStack(spacing: 20) {
+            VStack(spacing: 18) {
                 if !isSaverMode {
                     HeaderView(showSettings: $showSettings) {
                         openWindow(id: "history")
@@ -30,12 +31,12 @@ struct ContentView: View {
                     SaverHeaderView()
                 }
 
-                HStack(alignment: .top, spacing: 18) {
+                HStack(alignment: .top, spacing: 16) {
                     ChatListView()
 
                     if store.showSummaryInSaver {
                         SummarySidePanel(summary: store.summary)
-                            .frame(maxWidth: 320)
+                            .frame(maxWidth: 340)
                     }
                 }
 
@@ -46,7 +47,7 @@ struct ContentView: View {
                     )
                 }
             }
-            .padding(28)
+            .padding(24)
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
@@ -55,6 +56,9 @@ struct ContentView: View {
         .onAppear {
             if !isSaverMode && !store.isRunning {
                 store.startSession()
+            }
+            withAnimation(.easeInOut(duration: 7).repeatForever(autoreverses: true)) {
+                backdropBreathing = true
             }
         }
         .overlay {
@@ -87,30 +91,30 @@ private struct HeaderView: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("LunchTalk Saver")
-                    .font(.custom("Avenir Next", size: 28))
+                    .font(.system(size: 34, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                 Text(store.sessionTitle)
-                    .font(.custom("Avenir Next", size: 16))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.72))
             }
 
             Spacer()
 
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 RunningBadge(isRunning: store.isRunning)
 
                 Button("历史") {
                     openHistory()
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(GlassButtonStyle())
 
                 Button("设置") {
                     showSettings = true
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Color(red: 0.28, green: 0.44, blue: 0.82))
+                .buttonStyle(GlassProminentButtonStyle())
             }
         }
+        .padding(.horizontal, 2)
     }
 }
 
@@ -121,17 +125,18 @@ private struct SaverHeaderView: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("LunchTalk Saver")
-                    .font(.custom("Avenir Next", size: 26))
+                    .font(.system(size: 30, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                 Text(store.sessionTitle)
-                    .font(.custom("Avenir Next", size: 14))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.72))
             }
 
             Spacer()
 
             RunningBadge(isRunning: store.isRunning)
         }
+        .padding(.horizontal, 2)
     }
 }
 
@@ -142,15 +147,17 @@ private struct RunningBadge: View {
         HStack(spacing: 8) {
             Circle()
                 .fill(isRunning ? Color.green : Color.gray)
-                .frame(width: 10, height: 10)
+                .frame(width: 8, height: 8)
             Text(isRunning ? "对话中" : "已停止")
-                .font(.custom("Avenir Next", size: 14))
+                .font(.system(size: 13, weight: .medium))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(Color.white.opacity(0.15))
-        .clipShape(Capsule())
-        .foregroundStyle(.white)
+        .foregroundStyle(.white.opacity(0.95))
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay {
+            Capsule().stroke(Color.white.opacity(0.18), lineWidth: 1)
+        }
     }
 }
 
@@ -160,25 +167,28 @@ private struct ChatListView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: 18) {
+                LazyVStack(spacing: 14) {
                     ForEach(store.messages) { message in
                         ChatBubbleView(message: message)
                             .id(message.id)
                     }
                 }
                 .padding(.horizontal, 6)
-                .padding(.bottom, 6)
+                .padding(.vertical, 6)
             }
             .onChange(of: store.messages.count) { _, _ in
                 guard let lastId = store.messages.last?.id else { return }
-                withAnimation(.easeOut(duration: 0.4)) {
+                withAnimation(.easeOut(duration: 0.35)) {
                     proxy.scrollTo(lastId, anchor: .bottom)
                 }
             }
         }
-        .padding(18)
-        .background(Color.white.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(16)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .stroke(Color.white.opacity(0.16), lineWidth: 1)
+        }
     }
 }
 
@@ -191,51 +201,54 @@ private struct ChatBubbleView: View {
         HStack {
             if message.role == .explorer {
                 bubble
-                Spacer(minLength: 40)
+                Spacer(minLength: 46)
             } else {
-                Spacer(minLength: 40)
+                Spacer(minLength: 46)
                 bubble
             }
         }
     }
 
     private var bubble: some View {
-        VStack(alignment: message.role == .explorer ? .leading : .trailing, spacing: 6) {
+        VStack(alignment: message.role == .explorer ? .leading : .trailing, spacing: 7) {
             HStack(spacing: 8) {
                 Text(nameForRole)
-                    .font(.custom("Avenir Next", size: 12))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.78))
 
                 Text(message.role.badgeText)
-                    .font(.custom("Avenir Next", size: 11))
+                    .font(.system(size: 11, weight: .semibold))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
-                    .background(message.role.backgroundTint.opacity(0.6))
+                    .background(message.role.backgroundTint.opacity(0.55))
                     .clipShape(Capsule())
             }
 
             Text(message.text)
-                .font(.custom("Avenir Next", size: 15))
+                .font(.system(size: 15, weight: .regular))
                 .foregroundStyle(.white)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(Self.timeFormatter.string(from: message.time))
-                .font(.custom("Avenir Next", size: 11))
-                .foregroundStyle(.white.opacity(0.6))
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white.opacity(0.56))
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 14)
-        .background(message.role.bubbleColor.opacity(0.85))
+        .background(message.role == .explorer ? Color.white.opacity(0.10) : Color.accentColor.opacity(0.30))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.white.opacity(0.14), lineWidth: 1)
+        }
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .frame(maxWidth: 420, alignment: message.role == .explorer ? .leading : .trailing)
+        .frame(maxWidth: 460, alignment: message.role == .explorer ? .leading : .trailing)
+        .transition(.asymmetric(insertion: .move(edge: message.role == .explorer ? .leading : .trailing).combined(with: .opacity), removal: .opacity))
     }
 
     private var nameForRole: String {
         switch message.role {
-        case .explorer:
-            return store.roleAName
-        case .builder:
-            return store.roleBName
+        case .explorer: return store.roleAName
+        case .builder: return store.roleBName
         }
     }
 
@@ -250,15 +263,15 @@ private struct SummarySidePanel: View {
     let summary: SessionSummary
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
             Text("实时摘要")
-                .font(.custom("Avenir Next", size: 18))
+                .font(.system(size: 19, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
 
             if !summary.overview.isEmpty {
                 Text(summary.overview)
-                    .font(.custom("Avenir Next", size: 13))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(.white.opacity(0.82))
             }
 
             SummarySection(title: "要点", items: summary.bullets)
@@ -271,8 +284,11 @@ private struct SummarySidePanel: View {
             Spacer()
         }
         .padding(18)
-        .background(Color.white.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(Color.white.opacity(0.16), lineWidth: 1)
+        }
     }
 }
 
@@ -283,17 +299,17 @@ private struct SummarySection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.custom("Avenir Next", size: 13))
-                .foregroundStyle(.white.opacity(0.75))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.72))
 
             ForEach(items, id: \.self) { item in
-                HStack(alignment: .top, spacing: 6) {
+                HStack(alignment: .top, spacing: 7) {
                     Circle()
-                        .fill(Color.white.opacity(0.6))
+                        .fill(Color.white.opacity(0.65))
                         .frame(width: 4, height: 4)
                         .padding(.top, 6)
                     Text(item)
-                        .font(.custom("Avenir Next", size: 13))
+                        .font(.system(size: 13, weight: .regular))
                         .foregroundStyle(.white)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -312,31 +328,30 @@ private struct FooterView: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Session 时长")
-                    .font(.custom("Avenir Next", size: 12))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.66))
                 TimelineView(.periodic(from: .now, by: 1)) { _ in
                     Text(store.sessionDurationText)
-                        .font(.custom("Avenir Next", size: 18))
+                        .font(.system(size: 19, weight: .semibold, design: .rounded))
                         .foregroundStyle(.white)
                 }
             }
 
             Spacer()
 
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 Button("重新开始") {
                     restartAction()
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(GlassButtonStyle())
 
                 Button("结束并弹窗") {
                     endAction()
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Color(red: 0.78, green: 0.28, blue: 0.30))
+                .buttonStyle(GlassProminentButtonStyle())
             }
         }
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 2)
     }
 }
 
@@ -347,8 +362,8 @@ private struct SettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("设置")
-                .font(.custom("Avenir Next", size: 22))
-                .padding(.bottom, 4)
+                .font(.system(size: 24, weight: .semibold, design: .rounded))
+                .padding(.bottom, 2)
 
             Form {
                 Section("对话节奏") {
@@ -435,7 +450,7 @@ private struct SettingsView: View {
                     .tint(Color(red: 0.78, green: 0.28, blue: 0.30))
                 }
             }
-            .frame(minWidth: 480, minHeight: 460)
+            .frame(minWidth: 520, minHeight: 500)
             .onChange(of: store.historyRetentionDays) { _, _ in
                 store.applyHistoryPolicy()
             }
@@ -445,13 +460,11 @@ private struct SettingsView: View {
 
             HStack {
                 Spacer()
-                Button("完成") {
-                    dismiss()
-                }
-                .buttonStyle(.borderedProminent)
+                Button("完成") { dismiss() }
+                    .buttonStyle(.borderedProminent)
             }
         }
-        .padding(20)
+        .padding(22)
     }
 }
 
@@ -464,18 +477,17 @@ struct SummaryWindowView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.08, green: 0.09, blue: 0.13)
-                .ignoresSafeArea()
+            AppleBackdropView()
 
             VStack(alignment: .leading, spacing: 16) {
                 Text(store.summary.title)
-                    .font(.custom("Avenir Next", size: 20))
+                    .font(.system(size: 22, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
 
                 if !store.summary.overview.isEmpty {
                     Text(store.summary.overview)
-                        .font(.custom("Avenir Next", size: 13))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundStyle(.white.opacity(0.82))
                 }
 
                 SummarySection(title: "摘要", items: store.summary.bullets)
@@ -487,34 +499,23 @@ struct SummaryWindowView: View {
 
                 Spacer()
 
-                HStack(spacing: 12) {
-                    Button("复制摘要") {
-                        copySummary()
-                    }
-                    .buttonStyle(.bordered)
+                HStack(spacing: 10) {
+                    Button("复制摘要") { copySummary() }
+                        .buttonStyle(GlassButtonStyle())
 
-                    Button("打开完整对话") {
-                        openWindow(id: "main")
-                    }
-                    .buttonStyle(.bordered)
+                    Button("打开完整对话") { openWindow(id: "main") }
+                        .buttonStyle(GlassButtonStyle())
 
-                    Button("历史记录") {
-                        openWindow(id: "history")
-                    }
-                    .buttonStyle(.bordered)
+                    Button("历史记录") { openWindow(id: "history") }
+                        .buttonStyle(GlassButtonStyle())
 
-                    Button("关闭") {
-                        dismiss()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color(red: 0.78, green: 0.28, blue: 0.30))
+                    Button("关闭") { dismiss() }
+                        .buttonStyle(GlassProminentButtonStyle())
                 }
             }
-            .padding(22)
+            .padding(24)
         }
-        .onAppear {
-            scheduleAutoDismissIfNeeded()
-        }
+        .onAppear { scheduleAutoDismissIfNeeded() }
         .onChange(of: store.autoDismissSeconds) { _, _ in
             scheduleAutoDismissIfNeeded()
         }
@@ -529,9 +530,7 @@ struct SummaryWindowView: View {
         autoDismissTask = Task {
             try? await Task.sleep(for: .seconds(store.autoDismissSeconds))
             if Task.isCancelled { return }
-            await MainActor.run {
-                dismiss()
-            }
+            await MainActor.run { dismiss() }
         }
     }
 
@@ -544,30 +543,78 @@ struct SummaryWindowView: View {
     }
 }
 
-private struct BackgroundView: View {
+private struct AppleBackdropView: View {
+    var isBreathing: Bool = false
+
     var body: some View {
         LinearGradient(
             colors: [
-                Color(red: 0.06, green: 0.08, blue: 0.15),
-                Color(red: 0.10, green: 0.13, blue: 0.22),
-                Color(red: 0.15, green: 0.10, blue: 0.18)
+                Color(red: 0.05, green: 0.07, blue: 0.15),
+                Color(red: 0.09, green: 0.11, blue: 0.20),
+                Color(red: 0.16, green: 0.11, blue: 0.20)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
         .ignoresSafeArea()
-        .overlay(
-            RoundedRectangle(cornerRadius: 60)
-                .fill(Color.white.opacity(0.04))
+        .overlay(alignment: .topLeading) {
+            Circle()
+                .fill(.white.opacity(0.08))
+                .frame(width: 420, height: 420)
+                .blur(radius: 50)
+                .offset(x: -120, y: -160)
+                .scaleEffect(isBreathing ? 1.08 : 0.94)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Circle()
+                .fill(Color.blue.opacity(0.16))
                 .frame(width: 520, height: 520)
-                .offset(x: -240, y: -200)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 80)
-                .fill(Color.white.opacity(0.03))
-                .frame(width: 680, height: 420)
-                .offset(x: 260, y: 240)
-        )
+                .blur(radius: 80)
+                .offset(x: 140, y: 180)
+                .scaleEffect(isBreathing ? 0.95 : 1.08)
+        }
+    }
+}
+
+private struct GlassButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13, weight: .semibold))
+            .padding(.horizontal, 13)
+            .padding(.vertical, 8)
+            .foregroundStyle(.white)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color.white.opacity(configuration.isPressed ? 0.30 : 0.18), lineWidth: 1)
+            }
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
+private struct GlassProminentButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13, weight: .semibold))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .foregroundStyle(.white)
+            .background(
+                LinearGradient(
+                    colors: [Color(red: 0.22, green: 0.50, blue: 0.98), Color(red: 0.34, green: 0.65, blue: 1.0)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color.white.opacity(configuration.isPressed ? 0.28 : 0.16), lineWidth: 1)
+            }
+            .shadow(color: Color.blue.opacity(0.30), radius: 10, y: 4)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 

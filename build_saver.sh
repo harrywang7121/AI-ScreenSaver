@@ -47,11 +47,11 @@ cat > "$BUILD_DIR/$SAVER_NAME.saver/Contents/Info.plist" << 'EOF'
     <key>CFBundlePackageType</key>
     <string>BNDL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
+    <string>2.0</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>2</string>
     <key>NSPrincipalClass</key>
-    <string>LunchTalkSaver.LunchTalkScreenSaverView</string>
+    <string>LunchTalkScreenSaverView</string>
 </dict>
 </plist>
 EOF
